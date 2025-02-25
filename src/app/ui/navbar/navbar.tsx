@@ -1,4 +1,3 @@
-import { NavigationMenu } from "@/components/ui/navigation-menu";
 import { NavigationMenuDemo } from "./links";
 
 export default function Navbar() {
