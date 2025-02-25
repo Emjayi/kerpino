@@ -13,5 +13,3 @@ export type User = {
     phone: string;
     has_what: boolean;
 };
-
-export type UserProject = {}
