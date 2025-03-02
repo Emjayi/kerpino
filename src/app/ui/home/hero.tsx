@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function Hero() {
     return (
@@ -10,7 +12,14 @@ export default function Hero() {
                 </div>
                 <div className="flex flex-col text-center gap-4 p-2 justify-center items-center">
                     <h1 className=" drop-shadow-lg font-bold">Immersive Unreal Pixel Streaming Platform: A Cutting-Edge Virtual Showroom for Interactive Interior Design Experiences</h1>
-                    <button className="border-2 bg-white/10 hover:bg-white/50 border-white px-6 py-2">Start</button>
+                    <div className="flex gap-4">
+                        <Link href="/order">
+                            <Button className="">Order</Button>
+                        </Link>
+                        <Link href={`/login?callbackUrl=${encodeURIComponent("/dashboard")}`}>
+                            <Button className="">Login</Button>
+                        </Link>
+                    </div>
                 </div>
                 <div className="flex p-8 justify-start items-center"></div>
             </div>

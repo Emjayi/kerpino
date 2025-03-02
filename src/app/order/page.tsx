@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { CheckCircle2 } from "lucide-react"
 import { OrderForm } from "../ui/order-form";
+import { BackButton } from "../ui/buttons"
 
 export default function Page() {
     const [step, setStep] = useState(1)
@@ -48,6 +49,7 @@ export default function Page() {
 
     return (
         <div className="container mx-auto py-10 px-4 max-w-4xl">
+            <BackButton />
             <h1 className="text-3xl font-bold text-center mb-8">New Order</h1>
 
             {/* Progress indicator */}

@@ -1,10 +1,11 @@
+import { Button } from '@/components/ui/button';
 import clsx from 'clsx';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     children: React.ReactNode;
 }
 
-export function Button({ children, className, ...rest }: ButtonProps) {
+export function Buttonx({ children, className, ...rest }: ButtonProps) {
     return (
         <button
             {...rest}
@@ -15,5 +16,15 @@ export function Button({ children, className, ...rest }: ButtonProps) {
         >
             {children}
         </button>
+    );
+}
+
+
+export function BackButton() {
+    return (
+        <Button className='fixed z-50 left-5 top-5' onClick={() => window.history.back()} aria-label='Go back'
+        >
+            Back
+        </Button>
     );
 }
