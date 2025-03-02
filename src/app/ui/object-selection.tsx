@@ -1,68 +1,81 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Trash2 } from "lucide-react"
-import Image from "next/image"
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Trash2 } from "lucide-react";
+import Image from "next/image";
 
-const OBJECT_TYPES = ["armchair", "bed", "chair", "computer_chair", "couch", "desk", "lamp", "nightstand", "wardrobe"]
+const OBJECT_TYPES = ["armchair", "bed", "chair", "computer_chair", "couch", "desk", "lamp", "nightstand", "wardrobe"];
 
-export function ObjectSelection({ formData, updateFormData, onBack }) {
-  const [selectedObjects, setSelectedObjects] = useState(formData.selectedObjects || [])
-  const [currentSelection, setCurrentSelection] = useState(null)
-  const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 })
-  const [showDropdown, setShowDropdown] = useState(false)
-  const imageRef = useRef(null)
-  const previewUrl = formData.designPlan ? URL.createObjectURL(formData.designPlan) : null
+interface ObjectType {
+  id: number;
+  type: string;
+  position: { x: number; y: number };
+}
 
-  const handleImageClick = (e) => {
-    if (!imageRef.current) return
+interface FormData {
+  selectedObjects?: ObjectType[];
+  designPlan?: File;
+}
 
-    const rect = imageRef.current.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
+interface ObjectSelectionProps {
+  formData: FormData;
+  updateFormData: (data: { selectedObjects: ObjectType[] }) => void;
+  onBack: () => void;
+}
 
-    setClickPosition({ x, y })
-    setShowDropdown(true)
-  }
+export function ObjectSelection({ formData, updateFormData, onBack }: ObjectSelectionProps) {
+  const [selectedObjects, setSelectedObjects] = useState<ObjectType[]>(formData.selectedObjects || []);
+  const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
+  const [showDropdown, setShowDropdown] = useState(false);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const previewUrl = formData.designPlan ? URL.createObjectURL(formData.designPlan) : null;
 
-  const handleObjectSelect = (type) => {
-    const newObject = {
+  const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+    if (!imageRef.current) return;
+
+    const rect = imageRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    setClickPosition({ x, y });
+    setShowDropdown(true);
+  };
+
+  const handleObjectSelect = (type: string) => {
+    const newObject: ObjectType = {
       id: Date.now(),
       type,
       position: { ...clickPosition },
-    }
+    };
 
-    setSelectedObjects([...selectedObjects, newObject])
-    setShowDropdown(false)
-  }
+    setSelectedObjects([...selectedObjects, newObject]);
+    setShowDropdown(false);
+  };
 
-  const handleRemoveObject = (id) => {
-    setSelectedObjects(selectedObjects.filter((obj) => obj.id !== id))
-  }
+  const handleRemoveObject = (id: number) => {
+    setSelectedObjects(selectedObjects.filter((obj) => obj.id !== id));
+  };
 
   const handleSubmit = () => {
-    updateFormData({ selectedObjects })
-    alert("Your design order has been submitted successfully!")
-  }
+    updateFormData({ selectedObjects });
+    alert("Your design order has been submitted successfully!");
+  };
 
   useEffect(() => {
-    // Clean up object URLs when component unmounts
     return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
-    }
-  }, [previewUrl])
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   return (
     <div className="space-y-6">
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Select Objects in Your Plan</h2>
-        <p className="text-muted-foreground">
-          Click on objects in your plan and select what each one is from the dropdown menu.
-        </p>
+        <p className="text-muted-foreground">Click on objects in your plan and select what each one is from the dropdown menu.</p>
 
         {previewUrl ? (
           <div className="relative border rounded-lg overflow-hidden">
@@ -76,29 +89,20 @@ export function ObjectSelection({ formData, updateFormData, onBack }) {
                 onClick={handleImageClick}
               />
 
-              {/* Markers for selected objects */}
-              {selectedObjects.map((obj) => (
+              {selectedObjects.map((obj, index) => (
                 <div
                   key={obj.id}
                   className="absolute w-6 h-6 -ml-3 -mt-3 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold border-2 border-white"
-                  style={{
-                    left: `${obj.position.x}%`,
-                    top: `${obj.position.y}%`,
-                  }}
+                  style={{ left: `${obj.position.x}%`, top: `${obj.position.y}%` }}
                 >
-                  {selectedObjects.indexOf(obj) + 1}
+                  {index + 1}
                 </div>
               ))}
 
-              {/* Object selection dropdown */}
               {showDropdown && (
                 <div
                   className="absolute z-10 bg-card border rounded-md shadow-md p-2 w-48"
-                  style={{
-                    left: `${clickPosition.x}%`,
-                    top: `${clickPosition.y}%`,
-                    transform: "translate(-50%, 10px)",
-                  }}
+                  style={{ left: `${clickPosition.x}%`, top: `${clickPosition.y}%`, transform: "translate(-50%, 10px)" }}
                 >
                   <Select onValueChange={handleObjectSelect}>
                     <SelectTrigger>
@@ -120,9 +124,7 @@ export function ObjectSelection({ formData, updateFormData, onBack }) {
             </div>
           </div>
         ) : (
-          <div className="border rounded-lg p-8 text-center text-muted-foreground">
-            No bedroom plan uploaded. Please go back and upload a plan.
-          </div>
+          <div className="border rounded-lg p-8 text-center text-muted-foreground">No bedroom plan uploaded. Please go back and upload a plan.</div>
         )}
       </div>
 
@@ -142,9 +144,7 @@ export function ObjectSelection({ formData, updateFormData, onBack }) {
             <TableBody>
               {selectedObjects.map((obj, index) => (
                 <TableRow key={obj.id}>
-                  <TableCell>
-                    <Badge variant="outline">{index + 1}</Badge>
-                  </TableCell>
+                  <TableCell><Badge variant="outline">{index + 1}</Badge></TableCell>
                   <TableCell className="font-medium">{obj.type.replace("_", " ")}</TableCell>
                   <TableCell>{`X: ${obj.position.x.toFixed(1)}%, Y: ${obj.position.y.toFixed(1)}%`}</TableCell>
                   <TableCell>
@@ -157,21 +157,14 @@ export function ObjectSelection({ formData, updateFormData, onBack }) {
             </TableBody>
           </Table>
         ) : (
-          <div className="border rounded-lg p-4 text-center text-muted-foreground">
-            No objects selected yet. Click on your plan to start selecting objects.
-          </div>
+          <div className="border rounded-lg p-4 text-center text-muted-foreground">No objects selected yet. Click on your plan to start selecting objects.</div>
         )}
       </div>
 
       <div className="flex justify-between">
-        <Button type="button" variant="outline" onClick={onBack}>
-          Back
-        </Button>
-        <Button onClick={handleSubmit} disabled={selectedObjects.length === 0}>
-          Submit Design Order
-        </Button>
+        <Button type="button" variant="outline" onClick={onBack}>Back</Button>
+        <Button onClick={handleSubmit} disabled={selectedObjects.length === 0}>Submit Design Order</Button>
       </div>
     </div>
-  )
+  );
 }
-

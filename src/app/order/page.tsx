@@ -21,7 +21,7 @@ export default function Page() {
         phone: "",
         hasWhatsApp: false,
         whatsAppNumber: "",
-        designPlan: null,
+        designPlan: undefined,
         dimensions: {
             value: "",
             unit: "meters",
