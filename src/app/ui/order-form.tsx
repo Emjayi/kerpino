@@ -37,7 +37,7 @@ export function OrderForm({ formData, updateFormData, onNext }: any) {
         },
     })
 
-    const onSubmit = (data: any) => {
+    const onSubmit = (data: z.infer<typeof formSchema>) => {
         updateFormData(data)
         onNext()
     }

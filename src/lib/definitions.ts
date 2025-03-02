@@ -37,3 +37,24 @@ export type Order = {
     orderDueDate: string;
     orderPaid: boolean;
 }
+
+export interface FormDimensions {
+    value: string;
+    unit: "meters" | "feet";
+}
+
+export type FormDataType = {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    companyName: string;
+    position: string;
+    companyWebsite: string;
+    email: string;
+    phone: string;
+    hasWhatsApp: boolean;
+    whatsAppNumber: string;
+    designPlan: null | string;
+    dimensions: FormDimensions;
+    selectedObjects: string[];
+}
