@@ -3,7 +3,8 @@
 import { AuthError } from 'next-auth';
 import { z } from 'zod';
 import postgres from 'postgres';
-import { signIn } from '@/../auth'
+import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation';
 
 const FormSchema = z.object({
     id: z.string(),
@@ -31,21 +32,23 @@ export async function createInvoice(formData: FormData) {
     `;
 }
 
-export async function authenticate(
-    prevState: string | undefined,
-    formData: FormData,
-) {
-    try {
-        await signIn('credentials', formData);
-    } catch (error) {
-        if (error instanceof AuthError) {
-            switch (error.type) {
-                case 'CredentialsSignin':
-                    return 'Invalid credentials.';
-                default:
-                    return 'Something went wrong.';
-            }
-        }
-        throw error;
+
+const signInWith = (provider: any) => async () => {
+    const supabase = await createClient();
+    const auth_callback_url = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: auth_callback_url }
+    })
+
+    if (error) {
+        console.error('Error during sign in:', error);
+        throw new AuthError('OAuth sign-in failed');
     }
+
+    console.log(data, error)
+    redirect(data?.url)
 }
+
+export const signInWithGoogle = signInWith('google');
