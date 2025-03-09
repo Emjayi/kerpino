@@ -1,40 +1,68 @@
-'use client'
-import { useSearchParams } from 'next/navigation';
+"use client"
+import { useSearchParams } from "next/navigation"
+import type React from "react"
 
+import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import Link from 'next/link';
-import Image from 'next/image';
-import { BackButton } from './buttons';
-import { login, signup } from '@/app/login/actions'
-import { signInWithGoogle } from '@/lib/actions';
+import Link from "next/link"
+import Image from "next/image"
+import { BackButton } from "./buttons"
+import { login } from "@/lib/actions"
+import { signInWithGoogle } from "@/lib/actions"
+import { useFormStatus } from "react-dom"
+
+// Submit button with loading state
+function SubmitButton() {
+    const { pending } = useFormStatus()
+
+    return (
+        <Button type="submit" className="w-full" disabled={pending}>
+            {pending ? "Logging in..." : "Login"}
+        </Button>
+    )
+}
 
 export default function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
-    const searchParams = useSearchParams();
-    const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+    const searchParams = useSearchParams()
+    const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+    const [error, setError] = useState<string | null>(null)
 
     const handleGoogleSignIn = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.preventDefault();
-        signInWithGoogle();
-    };
+        e.preventDefault()
+        signInWithGoogle()
+    }
+
+    // Client-side form submission wrapper to handle errors
+    const handleSubmit = async (formData: FormData) => {
+        setError(null)
+        try {
+            await login(formData)
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Login failed. Please try again.")
+        }
+    }
 
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
             <BackButton />
             <Card className="overflow-hidden">
                 <CardContent className="grid p-0 md:grid-cols-2">
-                    <form className="p-6 md:p-8">
+                    <form action={handleSubmit} className="p-6 md:p-8">
                         <div className="flex flex-col gap-6">
                             <div className="flex flex-col items-center text-center">
                                 <h1 className="text-2xl font-bold">Welcome back</h1>
                                 <p className="text-balance text-muted-foreground">Login to your Kerpino account</p>
                             </div>
+
+                            {error && <div className="p-3 text-sm text-white bg-destructive rounded-md">{error}</div>}
+
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email</Label>
-                                <Input id="email" type="email" placeholder="m@example.com" required />
+                                <Input id="email" name="email" type="email" placeholder="m@example.com" required />
                             </div>
                             <div className="grid gap-2">
                                 <div className="flex items-center">
@@ -43,27 +71,25 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
                                         Forgot your password?
                                     </Link>
                                 </div>
-                                <Input id="password" type="password" required />
+                                <Input id="password" name="password" type="password" required />
                             </div>
                             <input type="hidden" name="redirectTo" value={callbackUrl} />
-                            <Button formAction={login} className="w-full">
-                                Login
-                            </Button>
+                            <SubmitButton />
                             <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                                 <span className="relative z-10 bg-background px-2 text-muted-foreground">Or continue with Google</span>
                             </div>
-                            <Button onClick={handleGoogleSignIn} variant="outline" className="w-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <Button onClick={handleGoogleSignIn} variant="outline" className="w-full" type="button">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5 mr-2">
                                     <path
                                         d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
                                         fill="currentColor"
                                     />
                                 </svg>
-                                <span className="sr-only">Login with Google</span>
+                                Login with Google
                             </Button>
                             <div className="text-center text-sm">
                                 Don&apos;t have an account?{" "}
-                                <Link href="#" className="underline underline-offset-4">
+                                <Link href="/signup" className="underline underline-offset-4">
                                     Sign up
                                 </Link>
                             </div>
@@ -73,9 +99,8 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
                         <Image
                             src="/1.jpg"
                             fill
-                            objectFit='cover'
                             alt="Image"
-                            className="absolute inset-0 dark:brightness-[0.2] dark:grayscale"
+                            className="absolute inset-0 object-cover dark:brightness-[0.2] dark:grayscale"
                         />
                     </div>
                 </CardContent>
@@ -86,3 +111,4 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
         </div>
     )
 }
+

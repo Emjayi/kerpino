@@ -48,11 +48,13 @@ export function DesignUpload({ formData, updateFormData, onNext, onBack }: any) 
     }
 
     // Create preview URL
-    const url: any = URL.createObjectURL(file)
-    setPreviewUrl(url)
+    if (typeof window !== "undefined") {
+      const url: any = window.URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
 
     // Set file in form
-    form.setValue("designPlan", file)
+    form.setValue("designPlan", file, { shouldValidate: true })
   }
 
   const onSubmit = (data: any) => {
@@ -64,6 +66,8 @@ export function DesignUpload({ formData, updateFormData, onNext, onBack }: any) 
       },
     })
     onNext()
+    console.log("Submitted Data:", data);
+    console.log("Selected File:", data.designPlan);
   }
 
   return (
@@ -102,7 +106,7 @@ export function DesignUpload({ formData, updateFormData, onNext, onBack }: any) 
                     {previewUrl && (
                       <div className="relative aspect-video w-full max-h-[300px] overflow-hidden rounded-md border">
                         <Image
-                          src={previewUrl || "/placeholder.svg"}
+                          src={previewUrl || "/plan/(1).jpg"}
                           alt="Bedroom plan preview"
                           fill
                           className="object-contain"
@@ -117,20 +121,20 @@ export function DesignUpload({ formData, updateFormData, onNext, onBack }: any) 
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="border rounded-md overflow-hidden">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="border col-span-2 rounded-md overflow-hidden">
                         <Image
-                          src="/placeholder.svg?height=200&width=300"
+                          src="/plan/2.jpg"
                           alt="Example bedroom plan 1"
-                          width={300}
-                          height={200}
+                          width={800}
+                          height={500}
                           className="w-full h-auto"
                         />
                         <div className="p-2 text-sm text-center">Example 1</div>
                       </div>
                       <div className="border rounded-md overflow-hidden">
                         <Image
-                          src="/placeholder.svg?height=200&width=300"
+                          src="/plan/1.jpg?height=200&width=300"
                           alt="Example bedroom plan 2"
                           width={300}
                           height={200}

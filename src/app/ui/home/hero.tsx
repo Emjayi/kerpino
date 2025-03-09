@@ -19,6 +19,12 @@ export default function Hero() {
                         <Link href={`/login?callbackUrl=${encodeURIComponent("/dashboard")}`}>
                             <Button className="">Login</Button>
                         </Link>
+                        <Link href={`/signup?callbackUrl=${encodeURIComponent("/dashboard")}`}>
+                            <Button className="">Signup</Button>
+                        </Link>
+                        <Link href={`/dashboard`}>
+                            <Button className="">Dashboard</Button>
+                        </Link>
                     </div>
                 </div>
                 <div className="flex p-8 justify-start items-center"></div>

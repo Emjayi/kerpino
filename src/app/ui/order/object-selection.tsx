@@ -25,9 +25,10 @@ interface ObjectSelectionProps {
   formData: FormData;
   updateFormData: (data: { selectedObjects: ObjectType[] }) => void;
   onBack: () => void;
+  onNext: () => void;
 }
 
-export function ObjectSelection({ formData, updateFormData, onBack }: ObjectSelectionProps) {
+export function ObjectSelection({ formData, updateFormData, onBack, onNext }: ObjectSelectionProps) {
   const [selectedObjects, setSelectedObjects] = useState<ObjectType[]>(formData.selectedObjects || []);
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   const [showDropdown, setShowDropdown] = useState(false);
@@ -44,6 +45,10 @@ export function ObjectSelection({ formData, updateFormData, onBack }: ObjectSele
     setClickPosition({ x, y });
     setShowDropdown(true);
   };
+  const handleSubmit = () => {
+    updateFormData({ selectedObjects })
+    onNext()
+  }
 
   const handleObjectSelect = (type: string) => {
     const newObject: ObjectType = {
@@ -60,11 +65,6 @@ export function ObjectSelection({ formData, updateFormData, onBack }: ObjectSele
     setSelectedObjects(selectedObjects.filter((obj) => obj.id !== id));
   };
 
-  const handleSubmit = () => {
-    updateFormData({ selectedObjects });
-    alert("Your design order has been submitted successfully!");
-  };
-
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -78,11 +78,11 @@ export function ObjectSelection({ formData, updateFormData, onBack }: ObjectSele
         <p className="text-muted-foreground">Click on objects in your plan and select what each one is from the dropdown menu.</p>
 
         {previewUrl ? (
-          <div className="relative border rounded-lg overflow-hidden">
+          <div className="relative border rounded-lg overflow-visible">
             <div className="relative aspect-video max-h-[500px] w-full">
               <Image
                 ref={imageRef}
-                src={previewUrl || "/placeholder.svg"}
+                src={previewUrl}
                 alt="Your bedroom plan"
                 fill
                 className="object-contain cursor-crosshair"
@@ -101,7 +101,7 @@ export function ObjectSelection({ formData, updateFormData, onBack }: ObjectSele
 
               {showDropdown && (
                 <div
-                  className="absolute z-10 bg-card border rounded-md shadow-md p-2 w-48"
+                  className="absolute overflow-visible z-10 bg-card border rounded-md shadow-md p-2 w-48"
                   style={{ left: `${clickPosition.x}%`, top: `${clickPosition.y}%`, transform: "translate(-50%, 10px)" }}
                 >
                   <Select onValueChange={handleObjectSelect}>
