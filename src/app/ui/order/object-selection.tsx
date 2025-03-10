@@ -208,8 +208,8 @@ export function ObjectSelectionAndResources({
     draggedBoxIdRef.current = id
     isDraggingRef.current = true
 
-    document.addEventListener("mousemove", handleDragMove)
-    document.addEventListener("mouseup", handleDragEnd)
+    document.addEventListener("mousemove", handleDragMove as unknown as EventListener)
+    document.addEventListener("mouseup", handleDragEnd as EventListener)
   }
 
   // Drag move handler
@@ -271,7 +271,7 @@ export function ObjectSelectionAndResources({
     // Ensure final state is updated
     setSelectedObjects([...objectsRef.current])
 
-    document.removeEventListener("mousemove", handleDragMove)
+    document.removeEventListener("mousemove", handleDragMove as unknown as EventListener)
     document.removeEventListener("mouseup", handleDragEnd)
   }, [handleDragMove])
 
@@ -298,7 +298,7 @@ export function ObjectSelectionAndResources({
     resizeHandleRef.current = handle
     isResizingRef.current = true
 
-    document.addEventListener("mousemove", handleResizeMove)
+    document.addEventListener("mousemove", handleResizeMove as unknown as EventListener)
     document.addEventListener("mouseup", handleResizeEnd)
   }
 
@@ -373,14 +373,14 @@ export function ObjectSelectionAndResources({
           // Ensure minimum size (in pixels)
           const MIN_SIZE_PX = 20
           if (newWidth < MIN_SIZE_PX) {
-            if (handle.includes("left")) {
+            if (handle?.includes("left")) {
               newX = x + width - MIN_SIZE_PX
             }
             newWidth = MIN_SIZE_PX
           }
 
           if (newHeight < MIN_SIZE_PX) {
-            if (handle.includes("top")) {
+            if (handle?.includes("top")) {
               newY = y + height - MIN_SIZE_PX
             }
             newHeight = MIN_SIZE_PX
@@ -425,7 +425,7 @@ export function ObjectSelectionAndResources({
     // Ensure final state is updated
     setSelectedObjects([...objectsRef.current])
 
-    document.removeEventListener("mousemove", handleResizeMove)
+    document.removeEventListener("mousemove", handleResizeMove as unknown as EventListener)
     document.removeEventListener("mouseup", handleResizeEnd)
   }, [handleResizeMove])
 
@@ -478,6 +478,8 @@ export function ObjectSelectionAndResources({
         y: centerY,
         width,
         height,
+        imgWidth,
+        imgHeight
       }, imageDimensionsRef.current)
 
       const newObject: ObjectItem = {
@@ -642,7 +644,7 @@ export function ObjectSelectionAndResources({
                   <Image
                     ref={imageRef}
                     key={previewUrl}
-                    src={previewUrl}
+                    src={previewUrl || ""}
                     alt="Your bedroom plan"
                     fill
                     className="object-contain select-none"
