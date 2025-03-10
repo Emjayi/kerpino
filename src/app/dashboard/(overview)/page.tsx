@@ -4,17 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Overview } from "@/app/ui/dashboard/overview"
 import { RecentSales } from "@/app/ui/dashboard/recent-sales"
-import { Sidebar, SidebarBody, SidebarLink } from "@/app/ui/dashboard/sidebar";
-import {
-    IconArrowLeft,
-    IconBrandTabler,
-    IconSettings,
-    IconUserBolt,
-} from "@tabler/icons-react";
-import Link from "next/link";
-import { motion } from "motion/react";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
 
