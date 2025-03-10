@@ -58,3 +58,51 @@ export type FormDataType = {
     dimensions: FormDimensions;
     selectedObjects: string[];
 }
+
+export interface Position {
+    x: number // Stored as percentage (0-100)
+    y: number // Stored as percentage (0-100)
+    width: number // Stored as percentage (0-100)
+    height: number // Stored as percentage (0-100)
+}
+
+export interface ObjectItem {
+    id: number
+    type: string
+    position: Position
+}
+
+export interface ResourceItem {
+    photo?: string
+    link?: string
+}
+
+export interface Resources {
+    [objectId: string]: {
+        [index: string]: ResourceItem
+    }
+}
+
+export interface FormData {
+    designPlan?: File
+    selectedObjects?: ObjectItem[]
+    objectResources?: Resources
+    [key: string]: any
+}
+
+export interface ObjectSelectionProps {
+    formData: FormData
+    updateFormData: (data: Partial<FormData>) => void
+    onNext: () => void
+    onBack: () => void
+    objectsJSON?: Array<{ id: number; x: number; y: number; width?: number; height?: number }>
+}
+
+export interface ImageDimensions {
+    width: number
+    height: number
+    top: number
+    left: number
+    naturalWidth: number
+    naturalHeight: number
+}

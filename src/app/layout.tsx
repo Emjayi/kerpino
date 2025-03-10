@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react"
 import { ThemeProvider } from "@/components/theme-provider"
+import { ModeToggle } from "./ui/mode-toggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,7 +36,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <div className="fixed top-2 right-2">
+            <ModeToggle />
+          </div>
           {children}
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>

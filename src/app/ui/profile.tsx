@@ -20,7 +20,7 @@ const formSchema = z.object({
     whatsAppNumber: z.string().optional(),
 })
 
-export function OrderForm({ formData, updateFormData, onNext }: any) {
+export function ProfileForm({ formData, updateFormData, onNext }: any) {
     const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {

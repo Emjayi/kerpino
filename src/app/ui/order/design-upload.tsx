@@ -11,8 +11,6 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Upload, Info } from "lucide-react"
 import Image from "next/image"
-import { URL } from "url"
-import { NextURL } from "next/dist/server/web/next-url"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
@@ -24,7 +22,7 @@ const formSchema = z.object({
   }),
 })
 
-export function DesignUpload({ formData, updateFormData, onNext, onBack }: any) {
+export function DesignUpload({ formData, updateFormData, onNext }: any) {
   const [previewUrl, setPreviewUrl] = useState(null)
 
   const form = useForm({
@@ -66,8 +64,6 @@ export function DesignUpload({ formData, updateFormData, onNext, onBack }: any) 
       },
     })
     onNext()
-    console.log("Submitted Data:", data);
-    console.log("Selected File:", data.designPlan);
   }
 
   return (
@@ -203,11 +199,8 @@ export function DesignUpload({ formData, updateFormData, onNext, onBack }: any) 
           </div>
         </div>
 
-        <div className="flex justify-between">
-          <Button type="button" variant="outline" onClick={onBack}>
-            Back
-          </Button>
-          <Button type="submit">Continue to Object Selection</Button>
+        <div className="flex justify-end">
+          <Button type="submit" disabled={previewUrl === null}>Continue</Button>
         </div>
       </form>
     </Form>

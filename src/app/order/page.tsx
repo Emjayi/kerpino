@@ -115,9 +115,8 @@
 "use client"
 
 import { useState } from "react"
-import { OrderForm } from "@/app/ui/order/order-form"
 import { DesignUpload } from "@/app/ui/order/design-upload"
-import { ObjectSelection } from "@/app/ui/order/object-selection"
+import { ObjectSelectionAndResources } from "@/app/ui/order/object-selection"
 import { RoomCustomizationAndShowroom } from "@/app/ui/order/room-customize"
 import { Card, CardContent } from "@/components/ui/card"
 import { CheckCircle2 } from "lucide-react"
@@ -159,7 +158,7 @@ export default function KerpinoRegistration() {
         window.scrollTo(0, 0)
     }
 
-    const totalSteps = 4
+    const totalSteps = 3
     const progressWidth = ((step - 1) / totalSteps) * 115;
 
     return (
@@ -187,7 +186,7 @@ export default function KerpinoRegistration() {
                             {step > i + 1 ? <CheckCircle2 className="h-6 w-6" /> : i + 1}
                         </div>
                         <span className="text-sm font-medium hidden md:block">
-                            {i === 0 ? "Register" : i === 1 ? "Upload Plan" : i === 2 ? "Select Objects" : "Customize Room"}
+                            {i === 0 ? "Upload Plan" : i === 1 ? "Select Objects" : "Customize Room"}
                         </span>
                     </div>
                 ))}
@@ -195,19 +194,18 @@ export default function KerpinoRegistration() {
 
             <Card className="mb-8">
                 <CardContent className="pt-6">
-                    {step === 1 && <OrderForm formData={formData} updateFormData={updateFormData} onNext={nextStep} />}
-                    {step === 2 && (
+                    {step === 1 && (
                         <DesignUpload formData={formData} updateFormData={updateFormData} onNext={nextStep} onBack={prevStep} />
                     )}
-                    {step === 3 && (
-                        <ObjectSelection
+                    {step === 2 && (
+                        <ObjectSelectionAndResources
                             formData={formData}
                             updateFormData={updateFormData}
                             onNext={nextStep}
                             onBack={prevStep}
                         />
                     )}
-                    {step === 4 && (
+                    {step === 3 && (
                         <RoomCustomizationAndShowroom
                             formData={formData}
                             updateFormData={updateFormData}
