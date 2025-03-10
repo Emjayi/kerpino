@@ -471,16 +471,14 @@ export function ObjectSelectionAndResources({
       const centerX = left + width / 2
       const centerY = top + height / 2
 
-      // Convert to percentages
-      const { width: imgWidth, height: imgHeight } = imageDimensionsRef.current
-      const percentPosition = pixelsToPercent({
-        x: centerX,
-        y: centerY,
+      // Convert to percentages by passing individual arguments
+      const percentPosition = pixelsToPercent(
+        centerX,
+        centerY,
         width,
         height,
-        imgWidth,
-        imgHeight
-      }, imageDimensionsRef.current)
+        imageDimensionsRef.current
+      )
 
       const newObject: ObjectItem = {
         id: Date.now(),
@@ -638,7 +636,7 @@ export function ObjectSelectionAndResources({
                 }
               }}
             >
-              <div className="">
+              <div className=" aspect-video">
 
                 <div className="">
                   <Image
