@@ -44,17 +44,20 @@ export async function middleware(request: NextRequest) {
         const path = request.nextUrl.pathname
 
         // If user is authenticated and trying to access login or signup pages, redirect to dashboard
-        if (user && (path === "/login" || path === "/signup" || path === "/")) {
+        // Note: We're removing the root path "/" from this condition to allow access to the main page
+        if (user && (path === "/login" || path === "/signup")) {
             return NextResponse.redirect(new URL("/dashboard", request.url))
         }
 
         // If not authenticated or error, redirect to login for protected routes
         if (error || !user) {
-            if (
-                path.startsWith("/dashboard") ||
-                path.startsWith("/order") ||
-                path.startsWith("/profile")
-            ) {
+            if (path.startsWith("/dashboard") || path.startsWith("/order") || path.startsWith("/profile")) {
+                // Special handling for order page - redirect to login with next parameter
+                if (path.startsWith("/order")) {
+                    const loginUrl = new URL("/login", request.url)
+                    loginUrl.searchParams.set("next", path)
+                    return NextResponse.redirect(loginUrl)
+                }
                 return NextResponse.redirect(new URL("/login", request.url))
             }
             return response
@@ -81,13 +84,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: [
-        "/",
-        "/login",
-        "/signup",
-        "/dashboard/:path*",
-        "/order/:path*",
-        "/profile/:path*",
-        "/profile"
-    ],
+    matcher: ["/", "/login", "/signup", "/dashboard/:path*", "/order/:path*", "/profile/:path*", "/profile"],
 }
+

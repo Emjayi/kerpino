@@ -28,7 +28,8 @@ function SubmitButton() {
 
 export default function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
     const searchParams = useSearchParams()
-    const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+    const next = searchParams.get("next")
+    const callbackUrl = next || searchParams.get("callbackUrl") || "/dashboard"
     const [error, setError] = useState<string | null>(null)
 
     const handleGoogleSignIn = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -39,6 +40,8 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
     // Client-side form submission wrapper to handle errors
     const handleSubmit = async (formData: FormData) => {
         setError(null)
+        // Add the redirectTo parameter to the form data
+        formData.append("redirectTo", callbackUrl)
         try {
             await login(formData)
         } catch (err) {
@@ -67,7 +70,7 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
                             <div className="grid gap-2">
                                 <div className="flex items-center">
                                     <Label htmlFor="password">Password</Label>
-                                    <Link href="#" className="ml-auto text-sm underline-offset-2 hover:underline">
+                                    <Link href="/reset-password" className="ml-auto text-sm underline-offset-2 hover:underline">
                                         Forgot your password?
                                     </Link>
                                 </div>
@@ -96,12 +99,7 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
                         </div>
                     </form>
                     <div className="relative hidden bg-muted md:block">
-                        <Image
-                            src="/1.jpg"
-                            fill
-                            alt="Image"
-                            className="absolute inset-0 object-cover dark:brightness-[0.4]"
-                        />
+                        <Image src="/1.jpg" fill alt="Image" className="absolute inset-0 object-cover dark:brightness-[0.4]" />
                     </div>
                 </CardContent>
             </Card>

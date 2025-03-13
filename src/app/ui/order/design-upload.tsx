@@ -125,7 +125,7 @@ export function DesignUpload({ formData, updateFormData, onNext }: any) {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="border col-span-2 rounded-md overflow-hidden">
                         <Image
-                          src="/plan/2.jpg?height=500&width=800"
+                          src="/plan/2.jpg"
                           alt="Example bedroom plan 1"
                           width={800}
                           height={500}
@@ -135,7 +135,7 @@ export function DesignUpload({ formData, updateFormData, onNext }: any) {
                       </div>
                       <div className="border rounded-md overflow-hidden">
                         <Image
-                          src="/plan/1.jpg?height=200&width=300"
+                          src="/plan/1.jpg"
                           alt="Example bedroom plan 2"
                           width={300}
                           height={200}
