@@ -57,7 +57,7 @@ export default function ResetPasswordPage() {
           </Link>
           <CardTitle className="text-2xl text-center">Reset Password</CardTitle>
           <CardDescription className="text-center">
-            Enter your email address and we'll send you a link to reset your password
+            Enter your email address and we&apos;ll send you a link to reset your password
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -68,10 +68,10 @@ export default function ResetPasswordPage() {
               </div>
               <h3 className="text-xl font-medium text-center">Check your email</h3>
               <p className="text-center text-muted-foreground">
-                We've sent a password reset link to <span className="font-medium">{email}</span>
+                We&apos;ve sent a password reset link to <span className="font-medium">{email}</span>
               </p>
               <p className="text-sm text-center text-muted-foreground">
-                Didn't receive the email? Check your spam folder or{" "}
+                Didn&apos;t receive the email? Check your spam folder or{" "}
                 <button onClick={() => setSubmitted(false)} className="text-primary underline hover:text-primary/80">
                   try again
                 </button>

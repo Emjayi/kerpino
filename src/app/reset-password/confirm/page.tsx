@@ -140,7 +140,7 @@ export default function ResetPasswordConfirmPage() {
               </div>
               <h3 className="text-xl font-medium text-center">Password Updated</h3>
               <p className="text-center text-muted-foreground">
-                Your password has been updated successfully. You'll be redirected to the login page shortly.
+                Your password has been updated successfully. You&apos;ll be redirected to the login page shortly.
               </p>
             </div>
           ) : (

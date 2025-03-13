@@ -41,7 +41,7 @@ export function ProfileDrawer({ children, triggerClassName }: ProfileDrawerProps
                         <div className="text-left">
                             <DrawerTitle>Update Your Profile</DrawerTitle>
                             <DrawerDescription>
-                                Make changes to your profile information here. Click save when you&aposre done.
+                                Make changes to your profile information here. Click save when you&apos;re done.
                             </DrawerDescription>
                         </div>
                         <DrawerClose asChild>
