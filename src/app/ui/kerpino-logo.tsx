@@ -1,6 +1,10 @@
 import { motion } from "motion/react";
 import Link from "next/link";
 
+export default function KerpinoLogo() {
+    return (<div></div>)
+}
+
 export const Logo = () => {
     return (
         <Link
