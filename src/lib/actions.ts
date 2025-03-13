@@ -24,6 +24,12 @@ const LoginSchema = z.object({
     redirectTo: z.string().optional(),
 })
 
+// Signup form validation schema with additional fields
+const SignupSchema = z.object({
+    email: z.string().email("Please enter a valid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+})
+
 export async function createInvoice(formData: FormData) {
     const sql = postgres()
     const { customerId, amount, status } = CreateInvoice.parse({
@@ -86,6 +92,14 @@ export async function login(formData: FormData) {
         console.log("Login successful", data)
         revalidatePath("/")
 
+        // After successful login, check if profile exists
+        const { data: profile } = await supabase.from("profiles").select("first_name").eq("id", data.user.id).single()
+
+        // Redirect to profile completion if no profile exists
+        if (!profile?.first_name) {
+            redirect("/profile")
+        }
+
         // Redirect to the callback URL or dashboard
         const redirectTo = validatedData.redirectTo || "/dashboard"
         redirect(redirectTo)
@@ -106,17 +120,17 @@ export async function signup(formData: FormData) {
 
     try {
         // Validate form data
-        const validatedData = LoginSchema.parse({
+        const validatedData = SignupSchema.parse({
             email: formData.get("email"),
             password: formData.get("password"),
         })
 
-        const { error } = await supabase.auth.signInWithOtp({
+        // Use signUp instead of signInWithOtp to create a new user with email confirmation
+        const { data, error } = await supabase.auth.signUp({
             email: validatedData.email,
+            password: validatedData.password,
             options: {
-                shouldCreateUser: false,
-                emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,
-
+                emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
             },
         })
 
@@ -124,8 +138,20 @@ export async function signup(formData: FormData) {
             throw new Error(error.message || "Sign up failed")
         }
 
-        revalidatePath("/")
-        redirect("/dashboard")
+        // Check if email confirmation is required
+        if (data.user && data.session) {
+            // User was signed in automatically (email confirmation might be disabled in Supabase settings)
+            revalidatePath("/")
+            redirect("/profile")
+        } else {
+            // Email confirmation is required
+            // Redirect to a confirmation page
+            return {
+                success: true,
+                message: "Please check your email for a confirmation link",
+                requiresEmailConfirmation: true,
+            }
+        }
     } catch (error) {
         if (error instanceof z.ZodError) {
             // Handle validation errors
@@ -139,35 +165,36 @@ export async function signup(formData: FormData) {
 }
 
 export async function signOut() {
-    const supabase = await createClient();
+    const supabase = await createClient()
 
     // Sign out the user
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut()
 
     if (error) {
-        console.error('Error signing out:', error);
-        throw new Error('Failed to sign out');
+        console.error("Error signing out:", error)
+        throw new Error("Failed to sign out")
     }
 
     // Revalidate all pages that might show different content based on auth state
-    revalidatePath('/', 'layout');
+    revalidatePath("/", "layout")
 
     // Redirect to home page after sign out
-    redirect('/');
+    redirect("/")
 }
 
 export async function GetUserEmail() {
-    const supabase = await createClient();
+    const supabase = await createClient()
 
     // Get the current user
-    const { data, error } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser()
 
     if (error || !data.user) {
-        console.error('Error fetching user:', error);
-        throw new Error('Failed to fetch user');
+        console.error("Error fetching user:", error)
+        throw new Error("Failed to fetch user")
     }
 
-    const userEmail = data.user.email;
+    const userEmail = data.user.email
 
-    return userEmail;
+    return userEmail
 }
+

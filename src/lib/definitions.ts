@@ -106,3 +106,25 @@ export interface ImageDimensions {
     naturalWidth: number
     naturalHeight: number
 }
+
+
+// API Response Types
+export interface DetectedObject {
+    id: number
+    x: number
+    y: number
+    width: number
+    height: number
+    confidence: number
+    class?: string
+}
+
+export interface ObjectDetectionResponse {
+    objects: DetectedObject[]
+    processingTime: number
+}
+
+export interface ShowroomGenerationResponse {
+    showroomUrl: string
+    estimatedTime: number
+}

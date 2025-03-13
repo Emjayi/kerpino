@@ -66,7 +66,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     {children}
                 </div>
             </div>
-            <div className="fixed  hidden md:flex gap-2 scrollbar-gutter-stable top-6 right-6 py-1 px-2 justify-center items-center z-20 bg-gray-600 rounded-full bg-clip-padding backdrop-filter backdrop-blur-lg bg-opacity-10 border border-netural-200 dark:border-neutral-700 dark:bg-neutral-800">
+            <div className="fixed flex gap-2 scrollbar-gutter-stable top-6 right-6 py-1 px-2 justify-center items-center z-20 bg-gray-600 rounded-full bg-clip-padding backdrop-filter backdrop-blur-lg bg-opacity-10 border border-netural-200 dark:border-neutral-700 dark:bg-neutral-800">
                 <ModeToggle />
                 <div className="bg-white duration-300 dark:bg-neutral-900 hover:dark:bg-neutral-700 hover:bg-neutral-300 rounded-full p-1">
                     <ProfileButton />

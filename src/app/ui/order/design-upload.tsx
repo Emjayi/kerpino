@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,7 +17,10 @@ import Image from "next/image"
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
 const formSchema = z.object({
-  designPlan: z.any().optional().refine((file) => file !== null, "Bedroom plan is required"),
+  designPlan: z
+    .any()
+    .optional()
+    .refine((file) => file !== null, "Bedroom plan is required"),
   dimensionValue: z.string().min(1, "Dimension value is required"),
   dimensionUnit: z.enum(["feet", "meters"], {
     required_error: "Please select a unit",
@@ -23,7 +28,7 @@ const formSchema = z.object({
 })
 
 export function DesignUpload({ formData, updateFormData, onNext }: any) {
-  const [previewUrl, setPreviewUrl] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -34,8 +39,8 @@ export function DesignUpload({ formData, updateFormData, onNext }: any) {
     },
   })
 
-  const handleFileChange = (e: any) => {
-    const file = e.target.files[0]
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
     if (!file) return
 
     if (file.size > MAX_FILE_SIZE) {
@@ -47,8 +52,8 @@ export function DesignUpload({ formData, updateFormData, onNext }: any) {
 
     // Create preview URL
     if (typeof window !== "undefined") {
-      const url: any = window.URL.createObjectURL(file);
-      setPreviewUrl(url);
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
     }
 
     // Set file in form
@@ -102,7 +107,7 @@ export function DesignUpload({ formData, updateFormData, onNext }: any) {
                     {previewUrl && (
                       <div className="relative aspect-video w-full max-h-[300px] overflow-hidden rounded-md border">
                         <Image
-                          src={previewUrl || "/plan/(1).jpg"}
+                          src={previewUrl || "/placeholder.svg"}
                           alt="Bedroom plan preview"
                           fill
                           className="object-contain"
@@ -120,7 +125,7 @@ export function DesignUpload({ formData, updateFormData, onNext }: any) {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="border col-span-2 rounded-md overflow-hidden">
                         <Image
-                          src="/plan/2.jpg"
+                          src="/plan/2.jpg?height=500&width=800"
                           alt="Example bedroom plan 1"
                           width={800}
                           height={500}
@@ -200,7 +205,9 @@ export function DesignUpload({ formData, updateFormData, onNext }: any) {
         </div>
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={previewUrl === null}>Continue</Button>
+          <Button type="submit" disabled={previewUrl === null}>
+            Continue
+          </Button>
         </div>
       </form>
     </Form>

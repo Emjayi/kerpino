@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 export default function LoginSkeleton({ className, ...props }: any) {
 
     return (
-        <div className={`flex flex-col gap-6 ${className}`} {...props}>
+        <div className={`min-w-[40vw] flex flex-col gap-6 ${className}`} {...props}>
             <Card>
                 <CardContent className="grid p-0 md:grid-cols-2 animate-pulse">
                     <form className="p-6 md:p-8 flex flex-col gap-4">

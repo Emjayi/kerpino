@@ -14,7 +14,14 @@ import { Badge } from "@/components/ui/badge"
 import { Upload, Trash2, Plus } from "lucide-react"
 import Image from "next/image"
 
-import type { ObjectItem, Resources, ImageDimensions, ObjectSelectionProps, ResourceItem, Position } from "@/lib/definitions"
+import type {
+  ObjectItem,
+  Resources,
+  ImageDimensions,
+  ObjectSelectionProps,
+  ResourceItem,
+  Position,
+} from "@/lib/definitions"
 import { OBJECT_TYPES, DEFAULT_OBJECTS_JSON, RESIZE_HANDLES } from "@/lib/constants/object-selection"
 import { percentToPixels, pixelsToPercent } from "@/lib/utils/object-selection"
 
@@ -61,7 +68,6 @@ export function ObjectSelectionAndResources({
   const startPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
   const startBoxDimensionsRef = useRef<Position>({ x: 0, y: 0, width: 0, height: 0 })
   const objectsRef = useRef<ObjectItem[]>(selectedObjects)
-
 
   // Memoize the preview URL to prevent regeneration on each render
   const previewUrl = useMemo(() => {
@@ -213,55 +219,52 @@ export function ObjectSelectionAndResources({
   }
 
   // Drag move handler
-  const handleDragMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDraggingRef.current || !draggedBoxIdRef.current || !containerRef.current) return
+  const handleDragMove = useCallback((e: MouseEvent) => {
+    if (!isDraggingRef.current || !draggedBoxIdRef.current || !containerRef.current) return
 
-      e.preventDefault()
+    e.preventDefault()
 
-      const containerRect = containerRef.current.getBoundingClientRect()
-      const currentX = e.clientX - containerRect.left
-      const currentY = e.clientY - containerRect.top
+    const containerRect = containerRef.current.getBoundingClientRect()
+    const currentX = e.clientX - containerRect.left
+    const currentY = e.clientY - containerRect.top
 
-      const deltaX = currentX - startPosRef.current.x
-      const deltaY = currentY - startPosRef.current.y
+    const deltaX = currentX - startPosRef.current.x
+    const deltaY = currentY - startPosRef.current.y
 
-      // Update objects in ref first to avoid re-renders
-      const updatedObjects = objectsRef.current.map((obj) => {
-        if (obj.id === draggedBoxIdRef.current) {
-          // Get the original position in pixels
-          const pixelPos = percentToPixels(startBoxDimensionsRef.current, imageDimensionsRef.current)
+    // Update objects in ref first to avoid re-renders
+    const updatedObjects = objectsRef.current.map((obj) => {
+      if (obj.id === draggedBoxIdRef.current) {
+        // Get the original position in pixels
+        const pixelPos = percentToPixels(startBoxDimensionsRef.current, imageDimensionsRef.current)
 
-          // Calculate new position in pixels
-          const newPixelX = pixelPos.x + deltaX
-          const newPixelY = pixelPos.y + deltaY
+        // Calculate new position in pixels
+        const newPixelX = pixelPos.x + deltaX
+        const newPixelY = pixelPos.y + deltaY
 
-          // Convert back to percentages
-          const { width: imgWidth, height: imgHeight } = imageDimensionsRef.current
-          const newPercentX = (newPixelX / imgWidth) * 100
-          const newPercentY = (newPixelY / imgHeight) * 100
+        // Convert back to percentages
+        const { width: imgWidth, height: imgHeight } = imageDimensionsRef.current
+        const newPercentX = (newPixelX / imgWidth) * 100
+        const newPercentY = (newPixelY / imgHeight) * 100
 
-          // Ensure the box stays within the image bounds (0-100%)
-          const boundedX = Math.max(obj.position.width / 2, Math.min(100 - obj.position.width / 2, newPercentX))
-          const boundedY = Math.max(obj.position.height / 2, Math.min(100 - obj.position.height / 2, newPercentY))
+        // Ensure the box stays within the image bounds (0-100%)
+        const boundedX = Math.max(obj.position.width / 2, Math.min(100 - obj.position.width / 2, newPercentX))
+        const boundedY = Math.max(obj.position.height / 2, Math.min(100 - obj.position.height / 2, newPercentY))
 
-          return {
-            ...obj,
-            position: {
-              ...obj.position,
-              x: boundedX,
-              y: boundedY,
-            },
-          }
+        return {
+          ...obj,
+          position: {
+            ...obj.position,
+            x: boundedX,
+            y: boundedY,
+          },
         }
-        return obj
-      })
+      }
+      return obj
+    })
 
-      objectsRef.current = updatedObjects
-      setSelectedObjects([...updatedObjects])
-    },
-    [percentToPixels],
-  )
+    objectsRef.current = updatedObjects
+    setSelectedObjects([...updatedObjects])
+  }, [])
 
   // Drag end handler
   const handleDragEnd = useCallback(() => {
@@ -303,118 +306,114 @@ export function ObjectSelectionAndResources({
   }
 
   // Resize move handler
-  const handleResizeMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isResizingRef.current || !resizedBoxIdRef.current || !containerRef.current || !resizeHandleRef.current)
-        return
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!isResizingRef.current || !resizedBoxIdRef.current || !containerRef.current || !resizeHandleRef.current) return
 
-      e.preventDefault()
+    e.preventDefault()
 
-      const containerRect = containerRef.current.getBoundingClientRect()
-      const currentX = e.clientX - containerRect.left
-      const currentY = e.clientY - containerRect.top
+    const containerRect = containerRef.current.getBoundingClientRect()
+    const currentX = e.clientX - containerRect.left
+    const currentY = e.clientY - containerRect.top
 
-      const deltaX = currentX - startPosRef.current.x
-      const deltaY = currentY - startPosRef.current.y
+    const deltaX = currentX - startPosRef.current.x
+    const deltaY = currentY - startPosRef.current.y
 
-      // Update objects in ref first to avoid re-renders
-      const updatedObjects = objectsRef.current.map((obj) => {
-        if (obj.id === resizedBoxIdRef.current) {
-          // Get the original position in pixels
-          const pixelPos = percentToPixels(startBoxDimensionsRef.current, imageDimensionsRef.current)
-          const { x, y, width, height } = pixelPos
+    // Update objects in ref first to avoid re-renders
+    const updatedObjects = objectsRef.current.map((obj) => {
+      if (obj.id === resizedBoxIdRef.current) {
+        // Get the original position in pixels
+        const pixelPos = percentToPixels(startBoxDimensionsRef.current, imageDimensionsRef.current)
+        const { x, y, width, height } = pixelPos
 
-          let newX = x
-          let newY = y
-          let newWidth = width
-          let newHeight = height
+        let newX = x
+        let newY = y
+        let newWidth = width
+        let newHeight = height
 
-          // Apply resize based on which handle was dragged
-          const handle = resizeHandleRef.current
+        // Apply resize based on which handle was dragged
+        const handle = resizeHandleRef.current
 
-          // Handle each resize direction
-          switch (handle) {
-            case "left":
-              newX = x + deltaX
-              newWidth = width - deltaX
-              break
-            case "right":
-              newWidth = width + deltaX
-              break
-            case "top":
-              newY = y + deltaY
-              newHeight = height - deltaY
-              break
-            case "bottom":
-              newHeight = height + deltaY
-              break
-            case "top-left":
-              newX = x + deltaX
-              newY = y + deltaY
-              newWidth = width - deltaX
-              newHeight = height - deltaY
-              break
-            case "top-right":
-              newY = y + deltaY
-              newWidth = width + deltaX
-              newHeight = height - deltaY
-              break
-            case "bottom-left":
-              newX = x + deltaX
-              newWidth = width - deltaX
-              newHeight = height + deltaY
-              break
-            case "bottom-right":
-              newWidth = width + deltaX
-              newHeight = height + deltaY
-              break
-          }
-
-          // Ensure minimum size (in pixels)
-          const MIN_SIZE_PX = 20
-          if (newWidth < MIN_SIZE_PX) {
-            if (handle?.includes("left")) {
-              newX = x + width - MIN_SIZE_PX
-            }
-            newWidth = MIN_SIZE_PX
-          }
-
-          if (newHeight < MIN_SIZE_PX) {
-            if (handle?.includes("top")) {
-              newY = y + height - MIN_SIZE_PX
-            }
-            newHeight = MIN_SIZE_PX
-          }
-
-          // Convert back to percentages
-          const { width: imgWidth, height: imgHeight } = imageDimensionsRef.current
-          const newPercentX = (newX / imgWidth) * 100
-          const newPercentY = (newY / imgHeight) * 100
-          const newPercentWidth = (newWidth / imgWidth) * 100
-          const newPercentHeight = (newHeight / imgHeight) * 100
-
-          // Ensure box stays within image bounds (0-100%)
-          const boundedX = Math.max(newPercentWidth / 2, Math.min(100 - newPercentWidth / 2, newPercentX))
-          const boundedY = Math.max(newPercentHeight / 2, Math.min(100 - newPercentHeight / 2, newPercentY))
-
-          return {
-            ...obj,
-            position: {
-              x: boundedX,
-              y: boundedY,
-              width: newPercentWidth,
-              height: newPercentHeight,
-            },
-          }
+        // Handle each resize direction
+        switch (handle) {
+          case "left":
+            newX = x + deltaX
+            newWidth = width - deltaX
+            break
+          case "right":
+            newWidth = width + deltaX
+            break
+          case "top":
+            newY = y + deltaY
+            newHeight = height - deltaY
+            break
+          case "bottom":
+            newHeight = height + deltaY
+            break
+          case "top-left":
+            newX = x + deltaX
+            newY = y + deltaY
+            newWidth = width - deltaX
+            newHeight = height - deltaY
+            break
+          case "top-right":
+            newY = y + deltaY
+            newWidth = width + deltaX
+            newHeight = height - deltaY
+            break
+          case "bottom-left":
+            newX = x + deltaX
+            newWidth = width - deltaX
+            newHeight = height + deltaY
+            break
+          case "bottom-right":
+            newWidth = width + deltaX
+            newHeight = height + deltaY
+            break
         }
-        return obj
-      })
 
-      objectsRef.current = updatedObjects
-      setSelectedObjects([...updatedObjects])
-    },
-    [percentToPixels],
-  )
+        // Ensure minimum size (in pixels)
+        const MIN_SIZE_PX = 20
+        if (newWidth < MIN_SIZE_PX) {
+          if (handle?.includes("left")) {
+            newX = x + width - MIN_SIZE_PX
+          }
+          newWidth = MIN_SIZE_PX
+        }
+
+        if (newHeight < MIN_SIZE_PX) {
+          if (handle?.includes("top")) {
+            newY = y + height - MIN_SIZE_PX
+          }
+          newHeight = MIN_SIZE_PX
+        }
+
+        // Convert back to percentages
+        const { width: imgWidth, height: imgHeight } = imageDimensionsRef.current
+        const newPercentX = (newX / imgWidth) * 100
+        const newPercentY = (newY / imgHeight) * 100
+        const newPercentWidth = (newWidth / imgWidth) * 100
+        const newPercentHeight = (newHeight / imgHeight) * 100
+
+        // Ensure box stays within image bounds (0-100%)
+        const boundedX = Math.max(newPercentWidth / 2, Math.min(100 - newPercentWidth / 2, newPercentX))
+        const boundedY = Math.max(newPercentHeight / 2, Math.min(100 - newPercentHeight / 2, newPercentY))
+
+        return {
+          ...obj,
+          position: {
+            x: boundedX,
+            y: boundedY,
+            width: newPercentWidth,
+            height: newPercentHeight,
+          },
+        }
+      }
+      return obj
+    })
+
+    objectsRef.current = updatedObjects
+    setSelectedObjects([...updatedObjects])
+  }, [])
 
   // Resize end handler
   const handleResizeEnd = useCallback(() => {
@@ -472,13 +471,7 @@ export function ObjectSelectionAndResources({
       const centerY = top + height / 2
 
       // Convert to percentages by passing individual arguments
-      const percentPosition = pixelsToPercent(
-        centerX,
-        centerY,
-        width,
-        height,
-        imageDimensionsRef.current
-      )
+      const percentPosition = pixelsToPercent(centerX, centerY, width, height, imageDimensionsRef.current)
 
       const newObject: ObjectItem = {
         id: Date.now(),
@@ -636,13 +629,12 @@ export function ObjectSelectionAndResources({
                 }
               }}
             >
-              <div className=" aspect-video">
-
+              <div className="aspect-video">
                 <div className="">
                   <Image
                     ref={imageRef}
                     key={previewUrl}
-                    src={previewUrl || ""}
+                    src={previewUrl || "/placeholder.svg?height=400&width=600"}
                     alt="Your bedroom plan"
                     fill
                     className="object-contain select-none"
@@ -660,10 +652,10 @@ export function ObjectSelectionAndResources({
                       <div
                         key={obj.id}
                         className={`absolute border-2 cursor-move transition-colors ${selectedBoxId === obj.id
-                          ? "border-yellow-500 bg-yellow-500/30"
-                          : obj.type
-                            ? "border-green-500 bg-green-500/20"
-                            : "border-red-500 bg-red-500/20"
+                            ? "border-yellow-500 bg-yellow-500/30"
+                            : obj.type
+                              ? "border-green-500 bg-green-500/20"
+                              : "border-red-500 bg-red-500/20"
                           }`}
                         style={getBoxStyle(obj, imageDimensionsRef.current)}
                         onClick={(e) => handleBoxClick(obj.id, e)}
@@ -689,9 +681,7 @@ export function ObjectSelectionAndResources({
                         )}
                       </div>
                     ))}
-
                 </div>
-
 
                 {/* Add new object button - only show when image is loaded */}
                 {imageLoaded && (
@@ -824,7 +814,7 @@ export function ObjectSelectionAndResources({
                           >
                             {resources[object.id]?.[index]?.photo ? (
                               <Image
-                                src={resources[object.id][index].photo || "/placeholder.svg"}
+                                src={resources[object.id][index].photo || "/placeholder.svg?height=128&width=128"}
                                 alt={`${object.type} option ${index + 1}`}
                                 width={128}
                                 height={128}

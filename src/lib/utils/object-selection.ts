@@ -1,7 +1,9 @@
-import type { Position, ImageDimensions } from '../types/object-selection'
+import type { Position, ImageDimensions } from "@/lib/definitions"
 
-export const percentToPixels = (position: Position, imageDimensions: ImageDimensions) => {
+// Convert percentage coordinates to pixel coordinates
+export function percentToPixels(position: Position, imageDimensions: ImageDimensions): Position {
     const { width, height } = imageDimensions
+
     return {
         x: (position.x / 100) * width,
         y: (position.y / 100) * height,
@@ -10,14 +12,16 @@ export const percentToPixels = (position: Position, imageDimensions: ImageDimens
     }
 }
 
-export const pixelsToPercent = (
+// Convert pixel coordinates to percentage coordinates
+export function pixelsToPercent(
     x: number,
     y: number,
     width: number,
     height: number,
-    imageDimensions: ImageDimensions
-): Position => {
+    imageDimensions: ImageDimensions,
+): Position {
     const { width: imgWidth, height: imgHeight } = imageDimensions
+
     return {
         x: (x / imgWidth) * 100,
         y: (y / imgHeight) * 100,
@@ -26,18 +30,3 @@ export const pixelsToPercent = (
     }
 }
 
-export const getBoxStyle = (obj: Position, imageDimensions: ImageDimensions): React.CSSProperties => {
-    const { width, height } = imageDimensions
-    const pixelX = (obj.x / 100) * width
-    const pixelY = (obj.y / 100) * height
-    const pixelWidth = (obj.width / 100) * width
-    const pixelHeight = (obj.height / 100) * height
-
-    return {
-        left: `${pixelX}px`,
-        top: `${pixelY}px`,
-        width: `${pixelWidth}px`,
-        height: `${pixelHeight}px`,
-        transform: "translate(-50%, -50%)",
-    }
-} 

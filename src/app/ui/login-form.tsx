@@ -100,7 +100,7 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
                             src="/1.jpg"
                             fill
                             alt="Image"
-                            className="absolute inset-0 object-cover dark:brightness-[0.2] dark:grayscale"
+                            className="absolute inset-0 object-cover dark:brightness-[0.4]"
                         />
                     </div>
                 </CardContent>

@@ -1,24 +1,39 @@
-import type { ResizeHandle } from '../types/object-selection'
-
-export const OBJECT_TYPES: string[] = [
-    "armchair",
-    "bed",
-    "chair",
-    "computer_chair",
-    "couch",
-    "desk",
-    "lamp",
-    "nightstand",
-    "wardrobe",
+export const OBJECT_TYPES = [
+    "Bed",
+    "Nightstand",
+    "Dresser",
+    "Wardrobe",
+    "Chair",
+    "Desk",
+    "Bookshelf",
+    "Lamp",
+    "Window",
+    "Door",
+    "Closet",
+    "TV_Stand",
+    "Mirror",
+    "Rug",
+    "Plant",
+    "Wall_Art",
+    "Curtains",
+    "Sofa",
+    "Coffee_Table",
+    "Side_Table",
+    "Dining_Table",
+    "Kitchen_Counter",
+    "Kitchen_Island",
+    "Refrigerator",
+    "Stove",
+    "Sink",
+    "Bathroom_Vanity",
+    "Toilet",
+    "Shower",
+    "Bathtub",
 ]
 
-export const DEFAULT_OBJECTS_JSON = [
-    { id: 1, x: 25, y: 25, width: 15, height: 10 },
-    { id: 2, x: 60, y: 40, width: 12, height: 18 },
-    { id: 3, x: 40, y: 70, width: 10, height: 10 },
-]
+export const DEFAULT_OBJECTS_JSON = []
 
-export const RESIZE_HANDLES: Array<{ position: ResizeHandle; cursor: string }> = [
+export const RESIZE_HANDLES = [
     { position: "top-left", cursor: "nwse-resize" },
     { position: "top", cursor: "ns-resize" },
     { position: "top-right", cursor: "nesw-resize" },
@@ -27,4 +42,5 @@ export const RESIZE_HANDLES: Array<{ position: ResizeHandle; cursor: string }> =
     { position: "bottom", cursor: "ns-resize" },
     { position: "bottom-left", cursor: "nesw-resize" },
     { position: "left", cursor: "ew-resize" },
-] 
+] as const
+
