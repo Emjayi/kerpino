@@ -43,7 +43,7 @@ function SubmitButton({ label }: { label: string }) {
     )
 }
 
-export default function AuthForm({ className, ...props }: React.ComponentProps<"div">) {
+export default function Page({ className, ...props }: React.ComponentProps<"div">) {
     const searchParams = useSearchParams()
     const next = searchParams.get("next")
     const callbackUrl = next || searchParams.get("callbackUrl") || "/dashboard"
@@ -451,4 +451,3 @@ export default function AuthForm({ className, ...props }: React.ComponentProps<"
         </div>
     )
 }
-
