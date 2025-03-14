@@ -1,71 +1,59 @@
-// import { Button } from "@/components/ui/button";
-// import Link from "next/link";
-
-// export default function Hero() {
-//     return (
-//         <div className="h-screen w-screen bg-cover bg-center text-white " style={{ backgroundImage: `url("/back.png")` }}>
-//             <div className="h-screen backdrop-blur-sm grid grid-cols-1 md:grid-cols-3 gap-2 md:grid-rows-1">
-//                 <div className="flex flex-col gap-2 p-8 justify-end items-start text-sm">
-//                     <p>- Lorem ipsum odor amet, consectetuer adipiscing elit.</p>
-//                     <p>- Lorem ipsum odor amet, consectetuer adipiscing elit. Lacus ut nisl maecenas aptent platea litora leo lacinia. Nec suscipit facilisi gravida ridiculus vehicula lacinia dapibus cubilia rutrum.</p>
-//                     <p>- Lorem ipsum odor amet, consectetuer adipiscing elit. Sed quam pharetra aliquam interdum venenatis luctus adipiscing. Magna faucibus dapibus dis; ultricies lorem conubia.</p>
-//                 </div>
-//                 <div className="flex flex-col text-center gap-4 p-2 justify-center items-center">
-//                     <h1 className=" drop-shadow-lg font-bold">Immersive Unreal Pixel Streaming Platform: A Cutting-Edge Virtual Showroom for Interactive Interior Design Experiences</h1>
-//                     <div className="flex gap-4">
-//                         <Link href="/order">
-//                             <Button className="">Order</Button>
-//                         </Link>
-//                         <Link href={`/login?callbackUrl=${encodeURIComponent("/dashboard")}`}>
-//                             <Button className="">Login</Button>
-//                         </Link>
-//                         <Link href={`/signup?callbackUrl=${encodeURIComponent("/dashboard")}`}>
-//                             <Button className="">Signup</Button>
-//                         </Link>
-//                         <Link href={`/dashboard`}>
-//                             <Button className="">Dashboard</Button>
-//                         </Link>
-//                     </div>
-//                 </div>
-//                 <div className="flex p-8 justify-start items-center"></div>
-//             </div>
-//         </div>
-//     );
-// }
 'use client'
 import React from "react";
+import { motion } from "framer-motion";
 import { Spotlight } from "@/app/ui/home/spotlight";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function Hero() {
+    const [isLoading, setIsLoading] = React.useState(false);
+    const handleStart = () => {
+        setIsLoading(!isLoading);
+    }
+
     return (
-        <div className="h-screen w-full flex md:items-center md:justify-center bg-black/[0.96] antialiased bg-grid-white/[0.02] relative overflow-hidden">
-            <Spotlight />
-            <div className=" p-4 max-w-7xl  mx-auto relative z-10  w-full pt-20 md:pt-0">
-                <h1 className="text-4xl md:text-7xl font-bold text-center pb-2 bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400 bg-opacity-50">
+        <motion.div
+            initial={{ backgroundSize: "105%" }}
+            animate={{ backgroundSize: isLoading ? "100%" : "105%" }}
+            transition={{ duration: 1.4 }}
+            className="h-screen w-full flex md:items-center bg-top md:justify-center antialiased bg-black object-cover bg-cover relative overflow-hidden" style={{ backgroundImage: `url("/back.png")` }}>
+            <motion.div
+                className="absolute top-0 w-screen h-screen duration-300"
+                initial={{ background: "linear-gradient(to bottom, rgba(0, 0, 0, 0.9)75%, rgba(0, 0, 0, 1))", className: "blur-lg", opacity: 1, backgroundSize: 1.2 }}
+                animate={{ background: isLoading ? "linear-gradient(to bottom, rgba(0, 0, 0, 0) 75%, rgba(0, 0, 0, 1))" : "linear-gradient(to bottom, rgba(0, 0, 0, 0.9)75%, rgba(0, 0, 0, 1))", backgroundSize: isLoading ? 1 : 1.2 }}
+                transition={{ duration: 0.8 }}
+            ><motion.div
+                initial={{ opacity: 1 }}
+                animate={isLoading ? { opacity: 0 } : { opacity: 1 }}
+                transition={{ duration: 1.2 }}
+            >
+                    <Spotlight />
+                </motion.div>
+            </motion.div>
+
+            <div className="p-4 flex flex-col justify-center items-center gap-5 max-w-7xl mx-auto relative z-10 w-full pt-20 md:pt-0">
+                <motion.h1
+                    initial={{ y: "0%", opacity: 1 }}
+                    animate={isLoading ? { y: "-20%", opacity: 0 } : { y: "0%", opacity: 1 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="text-4xl md:text-7xl font-bold text-center pb-2 bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400 bg-opacity-50">
                     Kerpo MVP
-                </h1>
-                <p className="mt-4 font-normal text-base text-neutral-300 max-w-lg text-center mx-auto">
+                </motion.h1>
+                <motion.p
+                    initial={{ y: "0%", opacity: 1 }}
+                    animate={isLoading ? { y: "20%", opacity: 0 } : { y: "0%", opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="mt-4 font-normal text-base text-neutral-300 max-w-lg text-center mx-auto">
                     Immersive Unreal Pixel Streaming Platform: A Cutting-Edge Virtual Showroom for Interactive Interior Design Experiences
-                </p>
-                <div className="flex flex-col text-center gap-4 p-2 justify-center items-center">
-                    <div className="flex gap-4">
-                        <Link href="/order">
-                            <Button className="">Order</Button>
-                        </Link>
-                        <Link href={`/login?callbackUrl=${encodeURIComponent("/dashboard")}`}>
-                            <Button className="">Login</Button>
-                        </Link>
-                        <Link href={`/signup?callbackUrl=${encodeURIComponent("/dashboard")}`}>
-                            <Button className="">Signup</Button>
-                        </Link>
-                        <Link href={`/dashboard`}>
-                            <Button className="">Dashboard</Button>
-                        </Link>
-                    </div>
-                </div>
+                </motion.p>
+                <motion.div
+                    initial={{ y: "0%" }}
+                    animate={{ y: isLoading ? "400%" : "0%" }}
+                    transition={{ duration: .8 }}
+                >
+                    <Button variant={isLoading ? "default" : "outline"} onClick={handleStart}>{isLoading ? "Back" : "Start"}</Button>
+                </motion.div>
             </div>
-        </div>
+        </motion.div>
     );
 }

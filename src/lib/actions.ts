@@ -1,200 +1,282 @@
 "use server"
 
-import { AuthError } from "next-auth"
-import { z } from "zod"
-import postgres from "postgres"
-import { createClient } from "@/utils/supabase/server"
+import { createServerClient, type CookieOptions } from "@supabase/ssr"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { revalidatePath } from "next/cache"
+import { v4 as uuidv4 } from "uuid"
 
-const FormSchema = z.object({
-    id: z.string(),
-    customerId: z.string(),
-    amount: z.coerce.number(),
-    status: z.enum(["pending", "paid"]),
-    date: z.string(),
-})
+// Helper function to create Supabase client
+async function createClient() {
+    const cookieStore = await cookies()
 
-const CreateInvoice = FormSchema.omit({ id: true, date: true })
-
-// Login form validation schema
-const LoginSchema = z.object({
-    email: z.string().email("Please enter a valid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    redirectTo: z.string().optional(),
-})
-
-// Signup form validation schema with additional fields
-const SignupSchema = z.object({
-    email: z.string().email("Please enter a valid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-})
-
-export async function createInvoice(formData: FormData) {
-    const sql = postgres()
-    const { customerId, amount, status } = CreateInvoice.parse({
-        customerId: formData.get("customerId"),
-        amount: formData.get("amount"),
-        status: formData.get("status"),
+    return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+        cookies: {
+            get(name: string) {
+                return cookieStore.get(name)?.value
+            },
+            set(name: string, value: string, options: CookieOptions) {
+                cookieStore.set({ name, value, ...options })
+            },
+            remove(name: string, options: CookieOptions) {
+                cookieStore.set({ name, value: "", ...options })
+            },
+        },
     })
-    const amountInCents = amount * 100
-    const date = new Date().toISOString().split("T")[0]
-
-    await sql`
-      INSERT INTO invoices (customer_id, amount, status, date)
-      VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
-    `
 }
 
-const signInWith = (provider: any) => async () => {
-    const supabase = await createClient()
-    const auth_callback_url = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+// Login action
+export async function login(formData: FormData) {
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+    const redirectTo = (formData.get("redirectTo") as string) || "/dashboard"
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: auth_callback_url },
-    })
-
-    if (error) {
-        console.error("Error during sign in:", error)
-        throw new AuthError("OAuth sign-in failed")
+    if (!email || !password) {
+        throw new Error("Email and password are required")
     }
 
-    console.log(data, error)
-    redirect(data?.url)
-}
-
-export const signInWithGoogle = signInWith("google")
-
-export async function login(formData: FormData) {
-    const supabase = await createClient()
-
     try {
-        // Validate form data
-        const validatedData = LoginSchema.parse({
-            email: formData.get("email"),
-            password: formData.get("password"),
-            redirectTo: formData.get("redirectTo"),
-        })
+        const supabase = await createClient()
 
-        // Attempt to sign in
         const { data, error } = await supabase.auth.signInWithPassword({
-            email: validatedData.email,
-            password: validatedData.password,
+            email,
+            password,
         })
 
         if (error) {
-            console.error("Login error:", error)
-            throw new Error(error.message || "Login failed")
+            throw new Error(error.message)
         }
 
-        // Successful login
-        console.log("Login successful", data)
-        revalidatePath("/")
+        // Check if profile is complete
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("first_name, last_name")
+            .eq("id", data.user.id)
+            .single()
 
-        // After successful login, check if profile exists
-        const { data: profile } = await supabase.from("profiles").select("first_name").eq("id", data.user.id).single()
+        // Add a delay before redirecting (1 second)
+        await new Promise((resolve) => setTimeout(resolve, 1000))
 
-        // Redirect to profile completion if no profile exists
-        if (!profile?.first_name) {
-            redirect("/profile")
+        // If profile is incomplete, redirect to profile page
+        if (!profile || !profile.first_name || !profile.last_name) {
+            redirect(`/profile?next=${encodeURIComponent(redirectTo)}`)
         }
 
-        // Redirect to the callback URL or dashboard
-        const redirectTo = validatedData.redirectTo || "/dashboard"
+        // Redirect to the specified URL after successful login
         redirect(redirectTo)
     } catch (error) {
-        if (error instanceof z.ZodError) {
-            // Handle validation errors
-            const errorMessage = error.errors.map((e) => e.message).join(", ")
-            throw new Error(errorMessage)
+        if (error instanceof Error) {
+            throw error
         }
-
-        // Re-throw other errors
-        throw error
+        throw new Error("An error occurred during login")
     }
 }
 
+// Signup action - only collects email and password
 export async function signup(formData: FormData) {
-    const supabase = await createClient()
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+    const confirmPassword = formData.get("confirmPassword") as string
+    const redirectTo = (formData.get("redirectTo") as string) || "/dashboard"
+
+    // Validate inputs
+    if (!email || !password || !confirmPassword) {
+        throw new Error("All fields are required")
+    }
+
+    if (password !== confirmPassword) {
+        throw new Error("Passwords do not match")
+    }
+
+    if (password.length < 8) {
+        throw new Error("Password must be at least 8 characters long")
+    }
 
     try {
-        // Validate form data
-        const validatedData = SignupSchema.parse({
-            email: formData.get("email"),
-            password: formData.get("password"),
-        })
+        const supabase = await createClient()
 
-        // Use signUp instead of signInWithOtp to create a new user with email confirmation
-        const { data, error } = await supabase.auth.signUp({
-            email: validatedData.email,
-            password: validatedData.password,
+        // Create the user
+        const {
+            data: { user },
+            error: signUpError,
+        } = await supabase.auth.signUp({
+            email,
+            password,
             options: {
-                emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+                emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
             },
         })
 
-        if (error) {
-            throw new Error(error.message || "Sign up failed")
+        if (signUpError) {
+            throw new Error(signUpError.message)
         }
 
-        // Check if email confirmation is required
-        if (data.user && data.session) {
-            // User was signed in automatically (email confirmation might be disabled in Supabase settings)
-            revalidatePath("/")
-            redirect("/profile")
-        } else {
-            // Email confirmation is required
-            // Redirect to a confirmation page
-            return {
-                success: true,
-                message: "Please check your email for a confirmation link",
-                requiresEmailConfirmation: true,
-            }
+        if (!user) {
+            throw new Error("Failed to create user")
         }
+
+        // Generate OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString() // 6-digit OTP
+
+        // Store OTP in database with expiry (30 minutes)
+        const expiresAt = new Date(Date.now() + 30 * 60 * 1000) // 30 minutes from now
+
+        // Create a temporary record in the otp_verifications table
+        const { error: otpError } = await supabase.from("otp_verifications").insert({
+            id: uuidv4(),
+            user_id: user.id,
+            email: email,
+            otp: otp,
+            expires_at: expiresAt.toISOString(),
+            verified: false,
+        })
+
+        if (otpError) {
+            console.error("Error storing OTP:", otpError)
+            throw new Error("Failed to create verification code")
+        }
+
+        // Send OTP via email
+        const { error: emailError } = await supabase.functions.invoke("send-otp-email", {
+            body: { email, otp },
+        })
+
+        if (emailError) {
+            console.error("Error sending OTP email:", emailError)
+            throw new Error("Failed to send verification code")
+        }
+
+        // Return user ID for the client to store
+        return { userId: user.id }
     } catch (error) {
-        if (error instanceof z.ZodError) {
-            // Handle validation errors
-            const errorMessage = error.errors.map((e) => e.message).join(", ")
-            throw new Error(errorMessage)
+        if (error instanceof Error) {
+            throw error
         }
-
-        // Re-throw other errors
-        throw error
+        throw new Error("An error occurred during signup")
     }
 }
 
-export async function signOut() {
+// Verify OTP
+export async function verifyOtp(formData: FormData) {
+    const email = formData.get("email") as string
+    const otp = formData.get("otp") as string
+    const userId = formData.get("userId") as string
+
+    if (!email || !otp || !userId) {
+        throw new Error("Email, OTP, and user ID are required")
+    }
+
+    try {
+        const supabase = await createClient()
+
+        // Verify OTP
+        const { data, error } = await supabase
+            .from("otp_verifications")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("email", email)
+            .eq("otp", otp)
+            .gt("expires_at", new Date().toISOString())
+            .eq("verified", false)
+            .single()
+
+        if (error || !data) {
+            throw new Error("Invalid or expired verification code")
+        }
+
+        // Mark OTP as verified
+        await supabase.from("otp_verifications").update({ verified: true }).eq("id", data.id)
+
+        // Sign in the user
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password: formData.get("password") as string,
+        })
+
+        if (signInError) {
+            throw new Error(signInError.message)
+        }
+
+        return { success: true }
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error
+        }
+        throw new Error("An error occurred during OTP verification")
+    }
+}
+
+// Complete profile
+export async function completeProfile(formData: FormData) {
+    const firstName = formData.get("firstName") as string
+    const lastName = formData.get("lastName") as string
+    const redirectTo = (formData.get("redirectTo") as string) || "/dashboard"
+
+    if (!firstName || !lastName) {
+        throw new Error("First name and last name are required")
+    }
+
+    try {
+        const supabase = await createClient()
+
+        // Get current user
+        const {
+            data: { user },
+            error: userError,
+        } = await supabase.auth.getUser()
+
+        if (userError || !user) {
+            throw new Error("User not authenticated")
+        }
+
+        // Create or update profile with admin rights
+        const { error: profileError } = await supabase.functions.invoke("create-profile", {
+            body: {
+                userId: user.id,
+                firstName,
+                lastName,
+                email: user.email,
+            },
+        })
+
+        if (profileError) {
+            throw new Error("Failed to create profile")
+        }
+
+        // Add a delay before redirecting (1 second)
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+
+        // Redirect to the specified URL after successful profile completion
+        redirect(redirectTo)
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error
+        }
+        throw new Error("An error occurred during profile completion")
+    }
+}
+
+// Google sign-in action
+export async function signInWithGoogle(redirectTo = "/dashboard") {
     const supabase = await createClient()
 
-    // Sign out the user
-    const { error } = await supabase.auth.signOut()
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+            redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+        },
+    })
 
     if (error) {
-        console.error("Error signing out:", error)
-        throw new Error("Failed to sign out")
+        throw new Error(error.message)
     }
 
-    // Revalidate all pages that might show different content based on auth state
-    revalidatePath("/", "layout")
-
-    // Redirect to home page after sign out
-    redirect("/")
+    redirect(data.url)
 }
 
-export async function GetUserEmail() {
+// Sign out action
+export async function signOut() {
     const supabase = await createClient()
-
-    // Get the current user
-    const { data, error } = await supabase.auth.getUser()
-
-    if (error || !data.user) {
-        console.error("Error fetching user:", error)
-        throw new Error("Failed to fetch user")
-    }
-
-    const userEmail = data.user.email
-
-    return userEmail
+    await supabase.auth.signOut()
+    redirect("/login")
 }
 

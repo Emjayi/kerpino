@@ -43,33 +43,48 @@ export async function middleware(request: NextRequest) {
         // Get the path
         const path = request.nextUrl.pathname
 
-        // If user is authenticated and trying to access login or signup pages, redirect to dashboard
-        // Note: We're removing the root path "/" from this condition to allow access to the main page
-        if (user && (path === "/login" || path === "/signup")) {
+        // If not authenticated or error, redirect to login for protected routes
+        if (error || !user) {
+            // Allow access to public pages
+            if (
+                path === "/" ||
+                path === "/login" ||
+                path === "/signup" ||
+                path.startsWith("/reset-password") ||
+                path.startsWith("/auth")
+            ) {
+                return response
+            }
+
+            // For any other page, redirect to login with next parameter
+            const loginUrl = new URL("/login", request.url)
+            loginUrl.searchParams.set("next", path)
+            return NextResponse.redirect(loginUrl)
+        }
+
+        // User is authenticated
+
+        // If trying to access login or signup pages, redirect to dashboard
+        if (path === "/login" || path === "/signup") {
             return NextResponse.redirect(new URL("/dashboard", request.url))
         }
 
-        // If not authenticated or error, redirect to login for protected routes
-        if (error || !user) {
-            if (path.startsWith("/dashboard") || path.startsWith("/order") || path.startsWith("/profile")) {
-                // Special handling for order page - redirect to login with next parameter
-                if (path.startsWith("/order")) {
-                    const loginUrl = new URL("/login", request.url)
-                    loginUrl.searchParams.set("next", path)
-                    return NextResponse.redirect(loginUrl)
-                }
-                return NextResponse.redirect(new URL("/login", request.url))
-            }
-            return response
-        }
+        // Check if profile exists and is complete
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("id, first_name, last_name")
+            .eq("id", user.id)
+            .single()
 
-        // Check if profile exists
-        const { data: profile } = await supabase.from("profiles").select("id, first_name").eq("id", user.id).single()
-
-        // If authenticated but no profile, redirect to profile completion
+        // If authenticated but no profile or incomplete profile, redirect to profile completion
         // except if they're already on the profile page
-        if (!profile?.first_name && !path.startsWith("/profile")) {
-            return NextResponse.redirect(new URL("/profile", request.url))
+        if ((!profile || !profile.first_name || !profile.last_name) && !path.startsWith("/profile")) {
+            // Store the original destination in the URL
+            const profileUrl = new URL("/profile", request.url)
+            if (path !== "/" && path !== "/dashboard") {
+                profileUrl.searchParams.set("next", path)
+            }
+            return NextResponse.redirect(profileUrl)
         }
 
         return response
@@ -84,6 +99,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/", "/login", "/signup", "/dashboard/:path*", "/order/:path*", "/profile/:path*", "/profile"],
+    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.svg).*)"],
 }
 

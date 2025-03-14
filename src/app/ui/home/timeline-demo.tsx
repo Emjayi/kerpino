@@ -1,6 +1,8 @@
 import Image from "next/image";
 import React from "react";
 import { Timeline } from "@/app/ui/timeline";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export function TimelineDemo() {
     const data = [
@@ -148,7 +150,23 @@ export function TimelineDemo() {
         },
     ];
     return (
-        <div className="w-full">
+        <div className="w-full  bg-black">
+            <div className="flex  bg-black flex-col text-center gap-4 p-2 justify-center items-center">
+                <div className="flex gap-4">
+                    <Link href="/order">
+                        <Button className="">Order</Button>
+                    </Link>
+                    <Link href={`/login?callbackUrl=${encodeURIComponent("/dashboard")}`}>
+                        <Button className="">Login</Button>
+                    </Link>
+                    <Link href={`/signup?callbackUrl=${encodeURIComponent("/dashboard")}`}>
+                        <Button className="">Signup</Button>
+                    </Link>
+                    <Link href={`/dashboard`}>
+                        <Button className="">Dashboard</Button>
+                    </Link>
+                </div>
+            </div>
             <Timeline data={data} />
         </div>
     );
