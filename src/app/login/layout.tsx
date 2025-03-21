@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     description: "Login to your Kerpino account",
 }
 
-export default function LoginLayout({
+export default function layout({
     children,
 }: {
     children: React.ReactNode
