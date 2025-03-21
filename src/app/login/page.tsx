@@ -20,7 +20,7 @@ import { Loader2 } from "lucide-react"
 import { ModeToggle } from "../ui/mode-toggle"
 
 
-export default function Page({ className, ...props }: React.ComponentProps<"div">) {
+export default function Page({ className }: { className?: string }) {
     const searchParams = useSearchParams()
     const next = searchParams.get("next")
     const callbackUrl = next || searchParams.get("callbackUrl") || "/dashboard"
@@ -407,7 +407,7 @@ export default function Page({ className, ...props }: React.ComponentProps<"div"
     )
 
     return (
-        <div className={cn("flex w-max-screen min-h-screen py-12 justify-center items-center flex-col gap-6", className)} {...props}>
+        <div className={cn("flex w-max-screen min-h-screen py-12 justify-center items-center flex-col gap-6", className)} >
             <BackButton />
             <Card className="">
                 <ModeToggle className=" ab top-0 right-0" />
