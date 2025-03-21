@@ -19,29 +19,6 @@ import { useAuthStore } from "@/lib/auth-store"
 import { Loader2 } from "lucide-react"
 import { ModeToggle } from "../ui/mode-toggle"
 
-// Submit button with loading state
-function SubmitButton({ label }: { label: string }) {
-    const { pending } = useFormStatus()
-
-    return (
-        <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? (
-                <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {label === "Login"
-                        ? "Logging in..."
-                        : label === "Sign Up"
-                            ? "Signing up..."
-                            : label === "Verify"
-                                ? "Verifying..."
-                                : "Saving..."}
-                </>
-            ) : (
-                label
-            )}
-        </Button>
-    )
-}
 
 export default function Page({ className, ...props }: React.ComponentProps<"div">) {
     const searchParams = useSearchParams()
@@ -449,5 +426,29 @@ export default function Page({ className, ...props }: React.ComponentProps<"div"
                 By clicking continue, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
             </div>
         </div>
+    )
+}
+
+// Submit button with loading state
+function SubmitButton({ label }: { label: string }) {
+    const { pending } = useFormStatus()
+
+    return (
+        <Button type="submit" className="w-full" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {label === "Login"
+                        ? "Logging in..."
+                        : label === "Sign Up"
+                            ? "Signing up..."
+                            : label === "Verify"
+                                ? "Verifying..."
+                                : "Saving..."}
+                </>
+            ) : (
+                label
+            )}
+        </Button>
     )
 }
