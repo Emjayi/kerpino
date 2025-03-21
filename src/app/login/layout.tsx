@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     description: "Login to your Kerpino account",
 }
 
-export default function layout({
+export default function Layout({
     children,
 }: {
     children: React.ReactNode
@@ -19,4 +19,3 @@ export default function layout({
         </div>
     )
 }
-
