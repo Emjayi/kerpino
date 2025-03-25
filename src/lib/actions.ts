@@ -280,3 +280,27 @@ export async function signOut() {
     redirect("/login")
 }
 
+// Fetch user profile
+export async function fetchUserProfile(userId: string) {
+    try {
+        const supabase = await createClient()
+
+        const { data: profile, error } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", userId)
+            .single()
+
+        if (error) {
+            throw new Error(error.message)
+        }
+
+        return profile
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error
+        }
+        throw new Error("An error occurred while fetching the user profile")
+    }
+}
+

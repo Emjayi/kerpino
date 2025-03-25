@@ -50,7 +50,7 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
   const [activeTab, setActiveTab] = useState<"selection" | "resources">("selection")
   const [imageLoaded, setImageLoaded] = useState<boolean>(false)
   const [furnitureData, setFurnitureData] = useState<FurnitureItem[]>([])
-  const [nextUserFurnitureId, setNextUserFurnitureId] = useState<number>(1)
+  const [nextUserFurnitureId, setNextUserFurnitureId] = useState<number>(objectsJSON.length + 1)
 
   // Drawing state
   const [isDrawing, setIsDrawing] = useState<boolean>(false)
@@ -150,8 +150,8 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
       // Find the highest user furniture ID to set the next ID counter
       const userIds = initialObjects
         .map((obj) => obj.id.toString())
-        .filter((id) => id.startsWith("furniture_user_"))
-        .map((id) => Number.parseInt(id.replace("furniture_user_", "")))
+        .filter((id) => id.startsWith("furniture_"))
+        .map((id) => Number.parseInt(id.replace("furniture_", "")))
 
       if (userIds.length > 0) {
         setNextUserFurnitureId(Math.max(...userIds) + 1)
@@ -294,7 +294,7 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
       ai_guess: "",
       verified: false,
       user_created: true,
-      original_id: `furniture_user_${newId}`,
+      original_id: `furniture_${newId}`,
     }
     setSelectedObjects((prev) => [...prev, newObject])
   }
@@ -685,7 +685,7 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
               ai_guess: "",
               verified: false,
               user_created: true,
-              original_id: `furniture_user_${newId}`,
+              original_id: `furniture_${newId}`,
             }
 
             setSelectedObjects((prev) => [...prev, newObject])
@@ -767,7 +767,7 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
   const handleExportJSON = () => {
     // Create a new JSON structure based on the original format
     const exportData = selectedObjects.map((obj) => {
-      const originalId = obj.original_id || (obj.user_created ? `furniture_${obj.id}` : `furniture_${obj.id}`)
+      const originalId = `furniture_${obj.id}`
 
       // Use the original bbox_px if it exists and the object hasn't been moved or resized
       let exportBbox = obj.bbox_px
@@ -867,7 +867,7 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
 
   // Get object display name
   const getObjectDisplayName = (obj: ObjectItem): string => {
-    const idPart = obj.original_id || (obj.user_created ? `furniture_user_${obj.id}` : `furniture_${obj.id}`)
+    const idPart = `furniture_${obj.id}`
     if (obj.type) {
       return `${idPart} (${obj.type})`
     }
@@ -1045,7 +1045,8 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.preventDefault()
                                         handleRemoveObject(obj.id)
                                         boxEscape()
                                       }}
@@ -1106,7 +1107,7 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
                     <TableRow key={obj.id} className={selectedBoxId === obj.id ? "bg-muted" : ""}>
                       <TableCell>
                         <Badge variant="outline">
-                          {obj.original_id || (obj.user_created ? `furniture_user_${obj.id}` : `furniture_${obj.id}`)}
+                          {`furniture_${obj.id}`}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
@@ -1125,9 +1126,35 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => handleRemoveObject(obj.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete your object and remove
+                                  it from the design.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    handleRemoveObject(obj.id)
+                                    boxEscape()
+                                  }}
+                                >
+                                  Continue
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1158,95 +1185,98 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
               {selectedObjects.some((obj) => obj.type) ? "Continue to Resources" : "Skip Resources"}
             </Button>
           </div>
-        </div>
-      )}
+        </div >
+      )
+      }
 
-      {activeTab === "resources" && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold">Upload Object Resources</h2>
-          <p className="text-muted-foreground">
-            Please upload photos and provide links for desired options for each selected object.
-          </p>
+      {
+        activeTab === "resources" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Upload Object Resources</h2>
+            <p className="text-muted-foreground">
+              Please upload photos and provide links for desired options for each selected object.
+            </p>
 
-          {selectedObjects
-            .filter((obj) => obj.type)
-            .map((object) => (
-              <Card key={object.id} className="p-4">
-                <h3 className="text-xl font-semibold mb-4">{getObjectDisplayName(object)}</h3>
-                <div className="flex flex-wrap gap-4">
-                  {[0, 1, 2].map((index) => (
-                    <div key={index} className="mb-4 p-4 border rounded-md w-full md:w-[calc(33.333%-1rem)]">
-                      <h4 className="text-lg font-medium mb-2">Option {index + 1}</h4>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor={`${object.id}-${index}-photo`}>Photo</Label>
-                          <div className="mt-1 flex items-center">
-                            <div className="relative">
-                              <Input
-                                id={`${object.id}-${index}-photo`}
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleFileChange(object.id, index, e)}
-                                className="hidden"
-                              />
-                              <Label
-                                htmlFor={`${object.id}-${index}-photo`}
-                                className="cursor-pointer flex items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg"
-                              >
-                                {resources[object.id]?.[index]?.photo ? (
-                                  <div className="relative w-full h-full">
-                                    <Image
-                                      src={resources[object.id][index].photo || "/placeholder.svg?height=128&width=128"}
-                                      alt={`${object.type} option ${index + 1}`}
-                                      fill
-                                      className="object-cover rounded-lg"
-                                    />
-                                    <Button
-                                      variant="destructive"
-                                      size="icon"
-                                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                                      onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        handleRemoveResourceImage(object.id, index)
-                                      }}
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <Upload className="w-8 h-8 text-gray-400" />
-                                )}
-                              </Label>
+            {selectedObjects
+              .filter((obj) => obj.type)
+              .map((object) => (
+                <Card key={object.id} className="p-4">
+                  <h3 className="text-xl font-semibold mb-4">{getObjectDisplayName(object)}</h3>
+                  <div className="flex flex-wrap gap-4">
+                    {[0, 1, 2].map((index) => (
+                      <div key={index} className="mb-4 p-4 border rounded-md w-full md:w-[calc(33.333%-1rem)]">
+                        <h4 className="text-lg font-medium mb-2">Option {index + 1}</h4>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor={`${object.id}-${index}-photo`}>Photo</Label>
+                            <div className="mt-1 flex items-center">
+                              <div className="relative">
+                                <Input
+                                  id={`${object.id}-${index}-photo`}
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleFileChange(object.id, index, e)}
+                                  className="hidden"
+                                />
+                                <Label
+                                  htmlFor={`${object.id}-${index}-photo`}
+                                  className="cursor-pointer flex items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg"
+                                >
+                                  {resources[object.id]?.[index]?.photo ? (
+                                    <div className="relative w-full h-full">
+                                      <Image
+                                        src={resources[object.id][index].photo || "/placeholder.svg?height=128&width=128"}
+                                        alt={`${object.type} option ${index + 1}`}
+                                        fill
+                                        className="object-cover rounded-lg"
+                                      />
+                                      <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                                        onClick={(e) => {
+                                          e.preventDefault()
+                                          e.stopPropagation()
+                                          handleRemoveResourceImage(object.id, index)
+                                        }}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <Upload className="w-8 h-8 text-gray-400" />
+                                  )}
+                                </Label>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div>
-                          <Label htmlFor={`${object.id}-${index}-link`}>Link</Label>
-                          <Input
-                            id={`${object.id}-${index}-link`}
-                            type="url"
-                            placeholder="https://example.com"
-                            value={resources[object.id]?.[index]?.link || ""}
-                            onChange={(e) => handleResourceChange(object.id, index, "link", e.target.value)}
-                          />
+                          <div>
+                            <Label htmlFor={`${object.id}-${index}-link`}>Link</Label>
+                            <Input
+                              id={`${object.id}-${index}-link`}
+                              type="url"
+                              placeholder="https://example.com"
+                              value={resources[object.id]?.[index]?.link || ""}
+                              onChange={(e) => handleResourceChange(object.id, index, "link", e.target.value)}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            ))}
+                    ))}
+                  </div>
+                </Card>
+              ))}
 
-          <div className="flex justify-between">
-            <Button onClick={() => setActiveTab("selection")} variant="outline">
-              Back to Selection
-            </Button>
-            <Button onClick={handleSubmit}>Next</Button>
+            <div className="flex justify-between">
+              <Button onClick={() => setActiveTab("selection")} variant="outline">
+                Back to Selection
+              </Button>
+              <Button onClick={handleSubmit}>Next</Button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   )
 }
 
