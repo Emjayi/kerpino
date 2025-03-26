@@ -394,17 +394,16 @@ export default function Page({ className }: { className?: any }) {
 
     return (
         <div className={cn("flex w-max-screen min-h-screen py-12 justify-center items-center flex-col gap-6", className)} >
-            <BackButton />
             <Card className="">
-                <CardContent className="grid p-0 md:grid-cols-2 w-min-[400px] md:w-[600px] lg:w-[700px] xl:w-[800px]">
+                <div className="relative top-[2rem] left-[2rem]">
+                    <BackButton />
+                </div>
+                <CardContent className="grid -mt-[3rem] p-0 md:grid-cols-1 w-[250px] md:w-[200px] lg:w-[300px] xl:w-[500px]">
                     {step === "login" && renderLoginForm()}
                     {step === "signup" && renderSignupForm()}
                     {step === "otp-verification" && renderOtpForm()}
                     {step === "profile-completion" && renderProfileForm()}
 
-                    <div className="relative hidden bg-muted md:block">
-                        <Image src="/1.jpg" fill alt="Image" className="absolute inset-0 object-cover dark:brightness-[0.4]" />
-                    </div>
                 </CardContent>
             </Card>
             <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">

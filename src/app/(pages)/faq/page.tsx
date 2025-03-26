@@ -10,9 +10,6 @@ export default function FAQPage() {
                 <h1 className="text-3xl font-bold tracking-tight mb-2">Kerpino FAQ</h1>
                 <p className="text-muted-foreground">Frequently asked questions about our products and services</p>
             </header>
-
-            <BackButton />
-
             <section className="mb-16">
                 <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="item-1">

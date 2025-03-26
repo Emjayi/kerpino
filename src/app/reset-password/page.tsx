@@ -11,6 +11,7 @@ import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 import Link from "next/link"
 import { Loader2, ArrowLeft, CheckCircle } from "lucide-react"
+import { WavyBackground } from "../ui/wavy-background"
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("")
@@ -45,7 +46,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center px-4">
+    <WavyBackground className="flex min-h-[80vh] items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <Link
@@ -112,7 +113,7 @@ export default function ResetPasswordPage() {
           </div>
         </CardFooter>
       </Card>
-    </div>
+    </WavyBackground>
   )
 }
 
