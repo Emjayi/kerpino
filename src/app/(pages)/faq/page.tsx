@@ -27,7 +27,7 @@ export default function FAQPage() {
                     <AccordionItem value="item-2">
                         <AccordionTrigger className="text-left">How do I create a Kerpino account?</AccordionTrigger>
                         <AccordionContent>
-                            You can create a Kerpino account by visiting our website and clicking on the "Sign Up" button in the top
+                            You can create a Kerpino account by visiting our website and clicking on the &quot;Sign Up&quot; button in the top
                             right corner. Follow the prompts to enter your information and create your account.
                         </AccordionContent>
                     </AccordionItem>
@@ -51,7 +51,7 @@ export default function FAQPage() {
                     <AccordionItem value="item-5">
                         <AccordionTrigger className="text-left">Do you offer refunds?</AccordionTrigger>
                         <AccordionContent>
-                            Yes, we offer a 30-day money-back guarantee on all our products. If you're not satisfied with your
+                            Yes, we offer a 30-day money-back guarantee on all our products. If you&apos;re not satisfied with your
                             purchase, please contact our customer support team within 30 days of your purchase for a full refund.
                         </AccordionContent>
                     </AccordionItem>
@@ -91,7 +91,7 @@ export default function FAQPage() {
                     <div>
                         <h3 className="text-base font-medium text-foreground mb-2">1. Acceptance of Terms</h3>
                         <p>
-                            By accessing or using Kerpino's services, you agree to be bound by these Terms of Service. If you do not
+                            By accessing or using Kerpino&apos;s services, you agree to be bound by these Terms of Service. If you do not
                             agree to these terms, please do not use our services.
                         </p>
                     </div>
@@ -116,7 +116,7 @@ export default function FAQPage() {
                     <div>
                         <h3 className="text-base font-medium text-foreground mb-2">4. Privacy Policy</h3>
                         <p>
-                            Your use of Kerpino's services is subject to our Privacy Policy, which is incorporated into these Terms of
+                            Your use of Kerpino&apos;s services is subject to our Privacy Policy, which is incorporated into these Terms of
                             Service. Please review our Privacy Policy to understand our practices.
                         </p>
                     </div>
@@ -124,7 +124,7 @@ export default function FAQPage() {
                     <div>
                         <h3 className="text-base font-medium text-foreground mb-2">5. Intellectual Property</h3>
                         <p>
-                            All content, features, and functionality of Kerpino's services, including but not limited to text,
+                            All content, features, and functionality of Kerpino&apos;s services, including but not limited to text,
                             graphics, logos, and software, are owned by Kerpino and are protected by copyright, trademark, and other
                             intellectual property laws.
                         </p>
