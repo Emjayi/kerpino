@@ -4,7 +4,7 @@ import { Suspense } from "react"
 import LoginSkeleton from "./skeleton"
 
 export const metadata: Metadata = {
-    title: "Login | Kerpino",
+    title: "Login - Kerpino",
     description: "Login to your Kerpino account",
 }
 

@@ -24,7 +24,7 @@ const leftNavItems: NavItem[] = [
 ]
 
 const rightNavItems: NavItem[] = [
-    { title: "Signup", href: "/signup" },
+    { title: "Blog", href: "/blog" },
     { title: "FAQ", href: "/faq" },
 ]
 

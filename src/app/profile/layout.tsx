@@ -43,7 +43,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return (
         <div
             className={cn(
-                "max-w-screen flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 flex-1 py-4",
+                "max-w-screen overflow-visible flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 flex-1 py-4",
                 "min-h-screen"
             )}
         >

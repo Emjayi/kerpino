@@ -11,6 +11,7 @@ import KerpinoLogo from "./kerpino-logo"
 import { motion } from "framer-motion"
 import { ModeToggle } from "./mode-toggle"
 import { ProfileButton } from "./dashboard/profile-button"
+import { usePathname } from "next/navigation"
 
 interface NavItem {
     title: string
@@ -23,7 +24,7 @@ const leftNavItems: NavItem[] = [
 ]
 
 const rightNavItems: NavItem[] = [
-    { title: "Signup", href: "/signup" },
+    { title: "Blog", href: "/blog" },
     { title: "FAQ", href: "/faq" },
 ]
 interface NavbarProps {
@@ -48,8 +49,8 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoading }) => {
         <header className=" top-0 z-50">
             <motion.div
                 initial={{ opacity: 0, y: "30%" }}
-                animate={scrolled ? !isLoading ? { opacity: 1, y: "0%", transition: { duration: 0., ease: "linear", easings: 0 } } : { opacity: 1, y: "0%", transition: { duration: 0.0002, ease: "linear", easings: 0 } } : !isLoading ? { opacity: 1, y: "170%", transition: { duration: 0.5 } } : { opacity: 0, y: "0%", transition: { duration: 0.0002, ease: "linear", easings: 0 } }}
-
+                animate={scrolled ? !isLoading ? { opacity: 1, y: "0%", transition: { duration: 0., ease: "linear", easings: 0 } } : { opacity: 1, y: "0%", transition: { duration: 0.0002, ease: "linear", easings: 0 } } : !isLoading ? { opacity: 1, y: "50%", transition: { duration: 0.5 } } : { opacity: 0, y: "0%", transition: { duration: 0.0002, ease: "linear", easings: 0 } }}
+                transition={{ duration: .2, delay: 0 }}
                 className={cn(
                     "w-full absolute z-50 transition-all text-white ease-in-out",
                     scrolled
