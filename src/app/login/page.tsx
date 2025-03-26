@@ -20,7 +20,7 @@ import { Loader2 } from "lucide-react"
 import { ModeToggle } from "../ui/mode-toggle"
 
 
-export default function Page({ className }: { className?: string }) {
+export default function Page({ className }: { className?: any }) {
     const searchParams = useSearchParams()
     const next = searchParams.get("next")
     const callbackUrl = next || searchParams.get("callbackUrl") || "/dashboard"
