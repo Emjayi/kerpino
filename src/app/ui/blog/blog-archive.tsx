@@ -159,7 +159,7 @@ export default function BlogArchive() {
                     {/* End of content message */}
                     {!hasMore && (
                         <div className="mt-10 text-center">
-                            <p className="text-muted-foreground">You've reached the end of the blog archive</p>
+                            <p className="text-muted-foreground">You&apos;ve reached the end of the blog archive</p>
                             <Button variant="outline" className="mt-4">
                                 Back to top
                             </Button>
