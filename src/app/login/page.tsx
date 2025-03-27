@@ -9,7 +9,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import Image from "next/image"
 import { BackButton } from "@/app/ui/buttons"
 import { login, signup, verifyOtp, completeProfile } from "@/lib/actions"
 import { signInWithGoogle } from "@/lib/actions"
@@ -17,35 +16,21 @@ import { useFormStatus } from "react-dom"
 import { toast } from "sonner"
 import { useAuthStore } from "@/lib/auth-store"
 import { Loader2 } from "lucide-react"
-import { ModeToggle } from "../ui/mode-toggle"
+import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp"
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp"
 
-
-export default function Page({ className }: { className?: any }) {
+export default function Page({ className }: { className?: string }) {
     const searchParams = useSearchParams()
     const next = searchParams.get("next")
     const callbackUrl = next || searchParams.get("callbackUrl") || "/dashboard"
 
     // Auth state from store
-    const {
-        email,
-        setEmail,
-        step,
-        setStep,
-        otpSent,
-        setOtpSent,
-        otpVerified,
-        setOtpVerified,
-        userId,
-        setUserId,
-        setNext,
-        reset,
-    } = useAuthStore()
+    const { email, setEmail, step, setStep, otpSent, setOtpSent, setOtpVerified, setNext, reset } = useAuthStore()
 
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
     const [otp, setOtp] = useState<string>("")
     const [password, setPassword] = useState<string>("")
-    const [confirmPassword, setConfirmPassword] = useState<string>("")
     const [firstName, setFirstName] = useState<string>("")
     const [lastName, setLastName] = useState<string>("")
 
@@ -56,10 +41,24 @@ export default function Page({ className }: { className?: any }) {
         }
     }, [callbackUrl, setNext])
 
-    const handleGoogleSignIn = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const handleGoogleSignIn = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault()
-        // Pass the next parameter to the Google sign-in function
-        signInWithGoogle(callbackUrl)
+        setError(null)
+
+        try {
+            // Pass the next parameter to the Google sign-in function
+            const result = await signInWithGoogle(callbackUrl) as { url?: string } | void
+
+            // If we get a URL back, redirect to it
+            if (result?.url) {
+                window.location.href = result.url
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Google login failed. Please try again.")
+            toast.error("Google login failed", {
+                description: err instanceof Error ? err.message : "Please try again.",
+            })
+        }
     }
 
     // Handle login form submission
@@ -96,11 +95,10 @@ export default function Page({ className }: { className?: any }) {
 
             const result = await signup(formData)
 
-            if (result?.userId) {
-                setUserId(result.userId)
+            if (result?.message) {
                 setOtpSent(true)
                 setStep("otp-verification")
-                setSuccess("Signup successful! Please check your email for the verification code.")
+                setSuccess("Verification code sent! Please check your email.")
                 toast.success("Verification code sent", {
                     description: "Please check your email for the verification code.",
                 })
@@ -119,20 +117,17 @@ export default function Page({ className }: { className?: any }) {
         setSuccess(null)
 
         try {
+            // Add the OTP value from state to the form data
+            formData.append("otp", otp)
             formData.append("email", email)
-            formData.append("userId", userId || "")
-            formData.append("password", password)
+            formData.append("redirectTo", callbackUrl)
 
-            const result = await verifyOtp(formData)
+            await verifyOtp(formData)
+            setOtpVerified(true)
+            setSuccess("Verification successful! Redirecting...")
+            toast.success("Verification successful")
 
-            if (result?.success) {
-                setOtpVerified(true)
-                setStep("profile-completion")
-                setSuccess("Verification successful! Please complete your profile.")
-                toast.success("Verification successful", {
-                    description: "Please complete your profile to continue.",
-                })
-            }
+            // The redirect will be handled by the server action
         } catch (err) {
             setError(err instanceof Error ? err.message : "Verification failed. Please try again.")
             toast.error("Verification failed", {
@@ -179,7 +174,7 @@ export default function Page({ className }: { className?: any }) {
                     <p className="text-balance text-muted-foreground">Login to your Kerpino account</p>
                 </div>
 
-                {error && <div className="p-3 text-sm text-white  rounded-md">{error}</div>}
+                {error && <div className="p-3 text-sm text-white bg-destructive rounded-md">{error}</div>}
                 {success && <div className="p-3 text-sm text-white bg-green-600 rounded-md">{success}</div>}
 
                 <div className="grid gap-2">
@@ -269,31 +264,7 @@ export default function Page({ className }: { className?: any }) {
                         onChange={(e) => setEmail(e.target.value)}
                         required
                     />
-                </div>
-
-                <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                        id="password"
-                        name="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                    <p className="text-xs text-muted-foreground">Password must be at least 8 characters long</p>
-                </div>
-
-                <div className="grid gap-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                    />
+                    <p className="text-xs text-muted-foreground">We'll send a verification code to this email</p>
                 </div>
 
                 <SubmitButton label="Sign Up" />
@@ -322,25 +293,28 @@ export default function Page({ className }: { className?: any }) {
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col items-center text-center">
                     <h1 className="text-2xl font-bold">Verify your email</h1>
-                    <p className="text-balance text-muted-foreground">
-                        We have sent a verification code to {email}. Please enter it below to continue.
+                    <p className="text-balance text-sm text-muted-foreground">
+                        We have sent a verification code to your email. Please enter it below to continue.
                     </p>
                 </div>
 
                 {error && <div className="p-3 text-sm text-white bg-destructive rounded-md">{error}</div>}
                 {success && <div className="p-3 text-sm text-white bg-green-600 rounded-md">{success}</div>}
 
-                <div className="grid gap-2">
-                    <Label htmlFor="otp">Verification Code</Label>
-                    <Input
-                        id="otp"
-                        name="otp"
-                        type="text"
-                        placeholder="123456"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        required
-                    />
+                <div className="flex flex-col justify-center items-center">
+                    <InputOTP maxLength={6} pattern={REGEXP_ONLY_DIGITS_AND_CHARS} value={otp} onChange={setOtp}>
+                        <InputOTPGroup>
+                            <InputOTPSlot index={0} />
+                            <InputOTPSlot index={1} />
+                            <InputOTPSlot index={2} />
+                        </InputOTPGroup>
+                        <InputOTPSeparator />
+                        <InputOTPGroup>
+                            <InputOTPSlot index={3} />
+                            <InputOTPSlot index={4} />
+                            <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                    </InputOTP>
                 </div>
 
                 <SubmitButton label="Verify" />
@@ -393,17 +367,16 @@ export default function Page({ className }: { className?: any }) {
     )
 
     return (
-        <div className={cn("flex w-max-screen min-h-screen py-12 justify-center items-center flex-col gap-6", className)} >
-            <Card className="">
-                <div className="relative top-[2rem] left-[2rem]">
+        <div className={cn("flex min-h-screen py-12 justify-center items-center flex-col gap-6", className)}>
+            <Card className="w-full max-w-md">
+                <div className="relative top-4 left-2">
                     <BackButton />
                 </div>
-                <CardContent className="grid -mt-[3rem] p-0 md:grid-cols-1 w-[250px] md:w-[200px] lg:w-[300px] xl:w-[500px]">
+                <CardContent className="grid -mt-[3rem] p-0 md:grid-cols-1">
                     {step === "login" && renderLoginForm()}
                     {step === "signup" && renderSignupForm()}
                     {step === "otp-verification" && renderOtpForm()}
                     {step === "profile-completion" && renderProfileForm()}
-
                 </CardContent>
             </Card>
             <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
@@ -436,3 +409,4 @@ function SubmitButton({ label }: { label: string }) {
         </Button>
     )
 }
+
