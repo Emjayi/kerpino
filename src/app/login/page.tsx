@@ -19,7 +19,7 @@ import { Loader2 } from "lucide-react"
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp"
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp"
 
-export default function Page({ className }: { className?: any }) {
+export default function Page({ className }: { className: any }) {
     const searchParams = useSearchParams()
     const next = searchParams.get("next")
     const callbackUrl = next || searchParams.get("callbackUrl") || "/dashboard"
