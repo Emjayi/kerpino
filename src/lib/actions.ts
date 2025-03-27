@@ -68,6 +68,7 @@ export async function login(formData: FormData) {
         return { error: "An error occurred during login" }
     }
 }
+
 // Signup action using email OTP
 export async function signup(formData: FormData) {
     const email = formData.get("email") as string

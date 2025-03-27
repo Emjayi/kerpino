@@ -1,5 +1,5 @@
 "use client"
-import { useSearchParams } from "next/navigation"
+import { redirect, useSearchParams } from "next/navigation"
 import type React from "react"
 
 import { useState, useEffect } from "react"
@@ -84,7 +84,7 @@ export default function Page() {
             // Only show success if we didn't get an error
             setSuccess("Logged in successfully! Redirecting...")
             toast.success("Logged in successfully!")
-
+            redirect("/dashboard")
             // Reset auth store after successful login
             reset()
         } catch (err) {
