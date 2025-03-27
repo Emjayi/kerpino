@@ -13,7 +13,7 @@ export default function Page() {
                 <Settings />
             </div>
             <div className="w-full px-6 flex justify-end">
-                <Button onClick={signOut} variant={"destructive"}>Signout</Button>
+                <Button onClick={signOut} variant={"destructive"}>Sign Out</Button>
             </div>
         </div>
     );

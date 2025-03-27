@@ -96,18 +96,6 @@ export function ProfileButton() {
         return "User"
     }
 
-
-    // Handle sign out with toast notification
-    const handleSignOut = async () => {
-        try {
-            await signOut()
-            toast.success("Signed out successfully")
-        } catch (error) {
-            console.error("Error signing out:", error)
-            toast.error("Failed to sign out")
-        }
-    }
-
     // Get avatar URL
     const getAvatarUrl = () => {
         if (!profileData.avatar_url) return null
@@ -145,11 +133,9 @@ export function ProfileButton() {
                 </ProfileDrawer>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                    <form action={signOut} className="w-full">
-                        <button type="submit" className="w-full text-left flex items-center">
-                            Sign Out
-                        </button>
-                    </form>
+                    <button onClick={signOut} type="submit" className="w-full text-left flex items-center">
+                        Sign Out
+                    </button>
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
