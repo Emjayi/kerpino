@@ -70,7 +70,18 @@ export default function Page() {
             // Add the redirectTo parameter to the form data
             formData.append("redirectTo", callbackUrl)
 
-            await login(formData)
+            const result = await login(formData)
+
+            // Check if result is an object with an error property
+            if (result && typeof result === "object" && "error" in result) {
+                setError(result.error as string)
+                toast.error("Login failed", {
+                    description: result.error as string,
+                })
+                return
+            }
+
+            // Only show success if we didn't get an error
             setSuccess("Logged in successfully! Redirecting...")
             toast.success("Logged in successfully!")
 
