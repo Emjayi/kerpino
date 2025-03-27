@@ -9,7 +9,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { BackButton } from "@/app/ui/buttons"
 import { login, signup, verifyOtp, completeProfile } from "@/lib/actions"
 import { signInWithGoogle } from "@/lib/actions"
 import { useFormStatus } from "react-dom"
@@ -427,9 +426,6 @@ export default function Page() {
     return (
         <div className="flex min-h-screen py-12 justify-center items-center flex-col gap-6">
             <Card className="w-full max-w-md">
-                <div className="relative top-4 left-2">
-                    <BackButton />
-                </div>
                 <CardContent className="grid -mt-[3rem] p-0 md:grid-cols-1">
                     {step === "login" && renderLoginForm()}
                     {step === "signup" && renderSignupForm()}
