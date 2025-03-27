@@ -236,7 +236,7 @@ export async function signOut() {
         return redirect("/")
     } catch (error) {
         console.error("Error signing out:", error)
-        return redirect("/dashboard")
+        return redirect("/")
     }
 }
 

@@ -201,7 +201,7 @@ export default function Page() {
                     <p className="text-balance text-muted-foreground">Login to your Kerpino account</p>
                 </div>
 
-                {error !== "NEXT_REDIRCET" && <div className="p-3 text-sm text-white bg-destructive rounded-md">{error}</div>}
+                {error && error !== "NEXT_REDIRCET" && <div className="p-3 text-sm text-white bg-destructive rounded-md">{error}</div>}
                 {success && <div className="p-3 text-sm text-white bg-green-600 rounded-md">{success}</div>}
 
                 <div className="grid gap-2">
@@ -277,7 +277,7 @@ export default function Page() {
                     <p className="text-balance text-muted-foreground">Sign up for a Kerpino account</p>
                 </div>
 
-                {error !== "NEXT_REDIRCET" && <div className="p-3 text-sm text-white bg-destructive rounded-md">{error}</div>}
+                {error && error !== "NEXT_REDIRCET" && <div className="p-3 text-sm text-white bg-destructive rounded-md">{error}</div>}
                 {success && <div className="p-3 text-sm text-white bg-green-600 rounded-md">{success}</div>}
 
                 <div className="grid gap-2">
@@ -350,7 +350,7 @@ export default function Page() {
                     </p>
                 </div>
 
-                {error !== "NEXT_REDIRCET" && <div className="p-3 text-sm text-white bg-destructive rounded-md">{error}</div>}
+                {error && error !== "NEXT_REDIRCET" && <div className="p-3 text-sm text-white bg-destructive rounded-md">{error}</div>}
                 {success && <div className="p-3 text-sm text-white bg-green-600 rounded-md">{success}</div>}
 
                 <div className="flex flex-col justify-center items-center">
@@ -390,7 +390,7 @@ export default function Page() {
                     </p>
                 </div>
 
-                {error !== "NEXT_REDIRCET" && <div className="p-3 text-sm text-white bg-destructive rounded-md">{error}</div>}
+                {error && error !== "NEXT_REDIRCET" && <div className="p-3 text-sm text-white bg-destructive rounded-md">{error}</div>}
                 {success && <div className="p-3 text-sm text-white bg-green-600 rounded-md">{success}</div>}
 
                 <div className="grid grid-cols-2 gap-4">
