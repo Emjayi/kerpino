@@ -87,6 +87,7 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(profileUrl)
         }
 
+        // FIX: Always return the response for authenticated users to allow navigation
         return response
     } catch (error) {
         console.error("Middleware error:", error)

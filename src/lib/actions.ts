@@ -257,13 +257,4 @@ export async function fetchUserProfile(userId: string) {
         throw new Error("An error occurred while fetching the user profile")
     }
 }
-// Fix 2: Add a navigation function to the dashboard to allow users to leave
-export async function navigateFromDashboard(path: string) {
-    try {
-        return redirect(path)
-    } catch (error) {
-        console.error("Navigation error:", error)
-        return { error: "Navigation failed" }
-    }
-}
 
