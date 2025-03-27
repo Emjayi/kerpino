@@ -11,24 +11,36 @@ import KerpinoLogo from "./kerpino-logo"
 import { motion } from "framer-motion"
 import { ModeToggle } from "./mode-toggle"
 import { ProfileButton } from "./dashboard/profile-button"
+import { useAuthStore } from "@/lib/auth-store"
 
 interface NavItem {
     title: string
     href: string
 }
 
-const leftNavItems: NavItem[] = [
-    { title: "Home", href: "/" },
-    { title: "Order", href: "/order" },
-    { title: "Login", href: "/login" },
-]
-
-const rightNavItems: NavItem[] = [
-    { title: "Blog", href: "/blog" },
-    { title: "FAQ", href: "/faq" },
-]
 
 export const Navbar = () => {
+    const { email } = useAuthStore()
+    const leftNavItems: NavItem[] = []
+    if (!email) {
+        leftNavItems.push({ title: "Home", href: "/" })
+        leftNavItems.push({ title: "Dashboard", href: "/dashboard" })
+        leftNavItems.push({ title: "Orders", href: "/dashboard/orders" })
+    } else {
+        leftNavItems.push({ title: "Home", href: "/" })
+        leftNavItems.push({ title: "Signup", href: "/login" })
+        leftNavItems.push({ title: "Login", href: "/login" })
+    }
+
+    const rightNavItems: NavItem[] = []
+    if (email) {
+        rightNavItems.push({ title: "Blog", href: "/blog" })
+        rightNavItems.push({ title: "FAQ", href: "/faq" })
+    } else {
+        rightNavItems.push({ title: "New Order", href: "/order" })
+        rightNavItems.push({ title: "Blog", href: "/blog" })
+        rightNavItems.push({ title: "FAQ", href: "/faq" })
+    }
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
     useEffect(() => {

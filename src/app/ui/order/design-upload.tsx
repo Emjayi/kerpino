@@ -233,7 +233,7 @@ export function DesignUpload({ formData, updateFormData, onNext }: any) {
                     {previewUrl && (
                       <div className="relative aspect-square w-full max-h-[300px] overflow-hidden rounded-md border">
                         <Image
-                          src={previewUrl || "/placeholder.svg"}
+                          src={previewUrl || ""}
                           alt="Bedroom plan preview"
                           fill
                           className="object-contain"
