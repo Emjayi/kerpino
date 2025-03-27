@@ -292,7 +292,7 @@ export default function Page({ className }: { className?: string }) {
                         onChange={(e) => setEmail(e.target.value)}
                         required
                     />
-                    <p className="text-xs text-muted-foreground">We'll send a verification code to this email</p>
+                    <p className="text-xs text-muted-foreground">We&apos;ll send a verification code to this email</p>
                 </div>
 
                 <SubmitButton label="Sign Up" />
