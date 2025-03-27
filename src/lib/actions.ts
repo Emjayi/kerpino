@@ -210,7 +210,7 @@ export async function signInWithGoogle(redirectTo = "/dashboard") {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+                redirectTo: `https://app.kerpino.app/auth/callback?next=${encodeURIComponent(redirectTo)}`,
             },
         })
 
