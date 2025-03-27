@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function Page() {
     return (
@@ -7,9 +8,11 @@ export default function Page() {
                 <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
             </div>
             <div className="flex items-center space-x-2">
-                <Button>
-                    New Order
-                </Button>
+                <Link href="/order">
+                    <Button>
+                        New Order
+                    </Button>
+                </Link>
             </div>
         </div>
     );

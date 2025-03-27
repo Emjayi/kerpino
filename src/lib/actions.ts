@@ -24,24 +24,23 @@ async function createClient() {
 }
 
 export async function login(formData: FormData) {
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
-    const redirectTo = (formData.get("redirectTo") as string) || "/dashboard"
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
 
     if (!email || !password) {
-        return { error: "Email and password are required" }
+        return { error: "Email and password are required" };
     }
 
     try {
-        const supabase = await createClient()
+        const supabase = await createClient();
 
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
-        })
+        });
 
         if (error) {
-            return { error: error.message }
+            return { error: error.message };
         }
 
         // Check if profile is complete
@@ -49,23 +48,23 @@ export async function login(formData: FormData) {
             .from("profiles")
             .select("first_name, last_name")
             .eq("id", data.user.id)
-            .single()
+            .single();
 
         // Add a delay before redirecting (1 second)
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // If profile is incomplete, redirect to profile page
         if (!profile || !profile.first_name || !profile.last_name) {
-            return redirect(`/profile?next=${encodeURIComponent(redirectTo)}`)
+            return redirect(`/profile?next=${encodeURIComponent("/dashboard")}`);
         }
 
-        // Redirect to the specified URL after successful login
-        return redirect(redirectTo)
+        // Always redirect to the dashboard after successful login
+        return redirect("/dashboard");
     } catch (error) {
         if (error instanceof Error) {
-            return { error: error.message }
+            return { error: error.message };
         }
-        return { error: "An error occurred during login" }
+        return { error: "An error occurred during login" };
     }
 }
 
