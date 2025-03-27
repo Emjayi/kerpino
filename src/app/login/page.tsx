@@ -19,7 +19,7 @@ import { Loader2 } from "lucide-react"
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp"
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp"
 
-export default function Page({ className }: { className: any }) {
+export default function Page() {
     const searchParams = useSearchParams()
     const next = searchParams.get("next")
     const callbackUrl = next || searchParams.get("callbackUrl") || "/dashboard"
@@ -31,6 +31,7 @@ export default function Page({ className }: { className: any }) {
     const [success, setSuccess] = useState<string | null>(null)
     const [otp, setOtp] = useState<string>("")
     const [password, setPassword] = useState<string>("")
+    const [confirmPassword, setConfirmPassword] = useState<string>("")
     const [firstName, setFirstName] = useState<string>("")
     const [lastName, setLastName] = useState<string>("")
 
@@ -47,7 +48,7 @@ export default function Page({ className }: { className: any }) {
 
         try {
             // Pass the next parameter to the Google sign-in function
-            const result = await signInWithGoogle(callbackUrl) as { url?: string } | void
+            const result = await signInWithGoogle(callbackUrl)
 
             // If we get a URL back, redirect to it
             if (result?.url) {
@@ -116,10 +117,29 @@ export default function Page({ className }: { className: any }) {
         setError(null)
         setSuccess(null)
 
+        // Validate passwords match
+        if (password !== confirmPassword) {
+            setError("Passwords do not match")
+            toast.error("Verification failed", {
+                description: "Passwords do not match",
+            })
+            return
+        }
+
+        // Validate password length
+        if (password.length < 8) {
+            setError("Password must be at least 8 characters long")
+            toast.error("Verification failed", {
+                description: "Password must be at least 8 characters long",
+            })
+            return
+        }
+
         try {
             // Add the OTP value from state to the form data
             formData.append("otp", otp)
             formData.append("email", email)
+            formData.append("password", password)
             formData.append("redirectTo", callbackUrl)
 
             await verifyOtp(formData)
@@ -156,6 +176,14 @@ export default function Page({ className }: { className: any }) {
                 description: err instanceof Error ? err.message : "Please try again.",
             })
         }
+    }
+
+    // Handle cancel OTP verification
+    const handleCancelOtp = () => {
+        setStep("signup")
+        setOtp("")
+        setError(null)
+        setSuccess(null)
     }
 
     // Show toast for success message
@@ -317,7 +345,37 @@ export default function Page({ className }: { className: any }) {
                     </InputOTP>
                 </div>
 
-                <SubmitButton label="Verify" />
+                <div className="grid gap-2">
+                    <Label htmlFor="password">Create Password</Label>
+                    <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                    <p className="text-xs text-muted-foreground">Password must be at least 8 characters long</p>
+                </div>
+
+                <div className="grid gap-2">
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                    />
+                </div>
+
+                <div className="flex gap-2">
+                    <Button type="button" variant="outline" className="flex-1" onClick={handleCancelOtp}>
+                        Cancel
+                    </Button>
+                    <SubmitButton label="Verify" className="flex-1" />
+                </div>
             </div>
         </form>
     )
@@ -367,7 +425,7 @@ export default function Page({ className }: { className: any }) {
     )
 
     return (
-        <div className={cn("flex min-h-screen py-12 justify-center items-center flex-col gap-6", className)}>
+        <div className="flex min-h-screen py-12 justify-center items-center flex-col gap-6">
             <Card className="w-full max-w-md">
                 <div className="relative top-4 left-2">
                     <BackButton />
@@ -387,11 +445,11 @@ export default function Page({ className }: { className: any }) {
 }
 
 // Submit button with loading state
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({ label, className }: { label: string; className?: string }) {
     const { pending } = useFormStatus()
 
     return (
-        <Button type="submit" className="w-full" disabled={pending}>
+        <Button type="submit" className={cn("w-full", className)} disabled={pending}>
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
