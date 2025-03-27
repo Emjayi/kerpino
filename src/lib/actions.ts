@@ -23,14 +23,13 @@ async function createClient() {
     })
 }
 
-// Login action
 export async function login(formData: FormData) {
     const email = formData.get("email") as string
     const password = formData.get("password") as string
     const redirectTo = (formData.get("redirectTo") as string) || "/dashboard"
 
     if (!email || !password) {
-        throw new Error("Email and password are required")
+        return { error: "Email and password are required" }
     }
 
     try {
@@ -42,7 +41,7 @@ export async function login(formData: FormData) {
         })
 
         if (error) {
-            throw new Error(error.message)
+            return { error: error.message }
         }
 
         // Check if profile is complete
@@ -64,12 +63,11 @@ export async function login(formData: FormData) {
         return redirect(redirectTo)
     } catch (error) {
         if (error instanceof Error) {
-            throw error
+            return { error: error.message }
         }
-        throw new Error("An error occurred during login")
+        return { error: "An error occurred during login" }
     }
 }
-
 // Signup action using email OTP
 export async function signup(formData: FormData) {
     const email = formData.get("email") as string
@@ -257,6 +255,15 @@ export async function fetchUserProfile(userId: string) {
             throw error
         }
         throw new Error("An error occurred while fetching the user profile")
+    }
+}
+// Fix 2: Add a navigation function to the dashboard to allow users to leave
+export async function navigateFromDashboard(path: string) {
+    try {
+        return redirect(path)
+    } catch (error) {
+        console.error("Navigation error:", error)
+        return { error: "Navigation failed" }
     }
 }
 
