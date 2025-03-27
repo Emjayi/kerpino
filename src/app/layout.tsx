@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react"
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "../components/theme-provider"
 import { ModeToggle } from "./ui/mode-toggle";
+import { ReactLenis, useLenis } from 'lenis/react'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,6 +20,8 @@ export const metadata: Metadata = {
   title: "Kerpino",
   description: "Created By Emjay",
 };
+
+
 
 export default function RootLayout({
   children,

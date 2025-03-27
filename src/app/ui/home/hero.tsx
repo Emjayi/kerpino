@@ -4,19 +4,24 @@ import { motion } from "framer-motion";
 import { Spotlight } from "@/app/ui/home/spotlight";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Navbar } from "../home-navbar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Hero() {
     const [isLoading, setIsLoading] = React.useState(false);
     const handleStart = () => {
         setIsLoading(!isLoading);
     }
-
+    const isMobile = useIsMobile();
     return (
         <motion.div
             initial={{ backgroundSize: "105%" }}
             animate={{ backgroundSize: isLoading ? "100%" : "105%" }}
             transition={{ duration: 1.4 }}
-            className="h-screen w-full flex md:items-center bg-top md:justify-center antialiased bg-black object-cover bg-cover relative overflow-hidden" style={{ backgroundImage: `url("/back.png")` }}>
+            className="h-screen w-full flex items-center bg-top justify-center antialiased bg-black object-cover bg-cover relative overflow-hidden" style={{ backgroundImage: `${isMobile ? `url("/1.jpg")` : `url("/back.png")`}` }}>
+            <div className="absolute top-0 left-0 w-full z-20">
+                <Navbar isLoading={isLoading} />
+            </div>
             <motion.div
                 className="absolute top-0 w-screen h-screen duration-300"
                 initial={{ background: "linear-gradient(to bottom, rgba(0, 0, 0, 0.9)75%, rgba(0, 0, 0, 1))", className: "blur-lg", opacity: 1, backgroundSize: 1.2 }}
@@ -43,7 +48,7 @@ export default function Hero() {
                     initial={{ y: "0%", opacity: 1 }}
                     animate={isLoading ? { y: "20%", opacity: 0 } : { y: "0%", opacity: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="mt-4 font-normal text-base text-neutral-300 max-w-lg text-center mx-auto">
+                    className="mt-4 font-normal text-base text-neutral-300 pb-2 max-w-lg text-center mx-auto">
                     Immersive Unreal Pixel Streaming Platform: A Cutting-Edge Virtual Showroom for Interactive Interior Design Experiences
                 </motion.p>
                 <motion.div
@@ -54,6 +59,6 @@ export default function Hero() {
                     <Button variant={isLoading ? "default" : "outline"} onClick={handleStart}>{isLoading ? "Back" : "Start"}</Button>
                 </motion.div>
             </div>
-        </motion.div>
+        </motion.div >
     );
 }

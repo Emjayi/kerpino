@@ -100,7 +100,7 @@ export function RoomCustomizationAndShowroom({ formData, updateFormData, onFinis
             )}
 
             {step === "showroom" && (
-                <>
+                <div className="h-min-48">
                     <h2 className="text-2xl font-bold">Showroom Preparation</h2>
                     <p className="text-muted-foreground">
                         Please wait while we prepare your showroom. This process usually takes about 20 minutes.
@@ -134,7 +134,7 @@ export function RoomCustomizationAndShowroom({ formData, updateFormData, onFinis
                             </Button>
                         </div>
                     )}
-                </>
+                </div>
             )}
 
             {step === "feedback" && (

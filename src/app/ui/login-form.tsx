@@ -120,15 +120,15 @@ export default function AuthForm({ className, ...props }: React.ComponentProps<"
                                         </Link>
                                     )}
                                 </div>
-                                <Input id="password" name="password" type="password" required />
+                                {mode === "login" && (<Input id="password" name="password" type="password" required />)}
                             </div>
-
+                            {/* 
                             {mode === "signup" && (
                                 <div className="grid gap-2">
                                     <Label htmlFor="confirmPassword">Confirm Password</Label>
                                     <Input id="confirmPassword" name="confirmPassword" type="password" required />
                                 </div>
-                            )}
+                            )} */}
 
                             <input type="hidden" name="redirectTo" value={callbackUrl} />
                             <SubmitButton mode={mode} />

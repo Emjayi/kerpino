@@ -22,7 +22,7 @@ export function Buttonx({ children, className, ...rest }: ButtonProps) {
 
 export function BackButton() {
     return (
-        <Button className='fixed z-50 left-5 top-5' onClick={() => window.history.back()} aria-label='Go back'
+        <Button variant="outline" onClick={() => window.history.back()} aria-label='Go back'
         >
             Back
         </Button>

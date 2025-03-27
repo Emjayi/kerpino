@@ -3,7 +3,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { v4 as uuidv4 } from "uuid"
 
 // Helper function to create Supabase client
 async function createClient() {
@@ -58,11 +57,11 @@ export async function login(formData: FormData) {
 
         // If profile is incomplete, redirect to profile page
         if (!profile || !profile.first_name || !profile.last_name) {
-            redirect(`/profile?next=${encodeURIComponent(redirectTo)}`)
+            return redirect(`/profile?next=${encodeURIComponent(redirectTo)}`)
         }
 
         // Redirect to the specified URL after successful login
-        redirect(redirectTo)
+        return redirect(redirectTo)
     } catch (error) {
         if (error instanceof Error) {
             throw error
@@ -71,82 +70,32 @@ export async function login(formData: FormData) {
     }
 }
 
-// Signup action - only collects email and password
+// Signup action using email OTP
 export async function signup(formData: FormData) {
     const email = formData.get("email") as string
-    const password = formData.get("password") as string
-    const confirmPassword = formData.get("confirmPassword") as string
     const redirectTo = (formData.get("redirectTo") as string) || "/dashboard"
 
-    // Validate inputs
-    if (!email || !password || !confirmPassword) {
-        throw new Error("All fields are required")
-    }
-
-    if (password !== confirmPassword) {
-        throw new Error("Passwords do not match")
-    }
-
-    if (password.length < 8) {
-        throw new Error("Password must be at least 8 characters long")
+    if (!email) {
+        throw new Error("Email is required")
     }
 
     try {
         const supabase = await createClient()
 
-        // Create the user
-        const {
-            data: { user },
-            error: signUpError,
-        } = await supabase.auth.signUp({
+        // Send OTP to the user's email
+        const { error } = await supabase.auth.signInWithOtp({
             email,
-            password,
             options: {
                 emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
             },
         })
 
-        if (signUpError) {
-            throw new Error(signUpError.message)
+        if (error) {
+            throw new Error(error.message)
         }
 
-        if (!user) {
-            throw new Error("Failed to create user")
-        }
-
-        // Generate OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString() // 6-digit OTP
-
-        // Store OTP in database with expiry (30 minutes)
-        const expiresAt = new Date(Date.now() + 30 * 60 * 1000) // 30 minutes from now
-
-        // Create a temporary record in the otp_verifications table
-        const { error: otpError } = await supabase.from("otp_verifications").insert({
-            id: uuidv4(),
-            user_id: user.id,
-            email: email,
-            otp: otp,
-            expires_at: expiresAt.toISOString(),
-            verified: false,
-        })
-
-        if (otpError) {
-            console.error("Error storing OTP:", otpError)
-            throw new Error("Failed to create verification code")
-        }
-
-        // Send OTP via email
-        const { error: emailError } = await supabase.functions.invoke("send-otp-email", {
-            body: { email, otp },
-        })
-
-        if (emailError) {
-            console.error("Error sending OTP email:", emailError)
-            throw new Error("Failed to send verification code")
-        }
-
-        // Return user ID for the client to store
-        return { userId: user.id }
+        // Inform the user to check their email for the OTP
+        return { message: "Check your email for the OTP to complete the sign-up process." }
     } catch (error) {
         if (error instanceof Error) {
             throw error
@@ -155,48 +104,46 @@ export async function signup(formData: FormData) {
     }
 }
 
-// Verify OTP
+// Verify OTP action
 export async function verifyOtp(formData: FormData) {
     const email = formData.get("email") as string
-    const otp = formData.get("otp") as string
-    const userId = formData.get("userId") as string
+    const token = formData.get("otp") as string
+    const password = formData.get("password") as string
+    const redirectTo = (formData.get("redirectTo") as string) || "/dashboard"
 
-    if (!email || !otp || !userId) {
-        throw new Error("Email, OTP, and user ID are required")
+    if (!email || !token) {
+        throw new Error("Email and OTP are required")
+    }
+
+    if (!password || password.length < 8) {
+        throw new Error("Password must be at least 8 characters long")
     }
 
     try {
         const supabase = await createClient()
 
-        // Verify OTP
-        const { data, error } = await supabase
-            .from("otp_verifications")
-            .select("*")
-            .eq("user_id", userId)
-            .eq("email", email)
-            .eq("otp", otp)
-            .gt("expires_at", new Date().toISOString())
-            .eq("verified", false)
-            .single()
-
-        if (error || !data) {
-            throw new Error("Invalid or expired verification code")
-        }
-
-        // Mark OTP as verified
-        await supabase.from("otp_verifications").update({ verified: true }).eq("id", data.id)
-
-        // Sign in the user
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        // First, verify the OTP
+        const { error: otpError } = await supabase.auth.verifyOtp({
             email,
-            password: formData.get("password") as string,
+            token,
+            type: "email",
         })
 
-        if (signInError) {
-            throw new Error(signInError.message)
+        if (otpError) {
+            throw new Error(otpError.message)
         }
 
-        return { success: true }
+        // After OTP verification, update the user's password
+        const { error: updateError } = await supabase.auth.updateUser({
+            password,
+        })
+
+        if (updateError) {
+            throw new Error(updateError.message)
+        }
+
+        // Redirect to the specified URL after successful verification
+        return redirect(redirectTo)
     } catch (error) {
         if (error instanceof Error) {
             throw error
@@ -246,7 +193,7 @@ export async function completeProfile(formData: FormData) {
         await new Promise((resolve) => setTimeout(resolve, 1000))
 
         // Redirect to the specified URL after successful profile completion
-        redirect(redirectTo)
+        return redirect(redirectTo)
     } catch (error) {
         if (error instanceof Error) {
             throw error
@@ -257,26 +204,59 @@ export async function completeProfile(formData: FormData) {
 
 // Google sign-in action
 export async function signInWithGoogle(redirectTo = "/dashboard") {
-    const supabase = await createClient()
+    try {
+        const supabase = await createClient()
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-            redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
-        },
-    })
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+                redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+            },
+        })
 
-    if (error) {
-        throw new Error(error.message)
+        if (error) {
+            throw new Error(error.message)
+        }
+
+        // Return the URL instead of redirecting
+        return { url: data.url }
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error
+        }
+        throw new Error("An error occurred during Google sign-in")
     }
-
-    redirect(data.url)
 }
 
 // Sign out action
 export async function signOut() {
-    const supabase = await createClient()
-    await supabase.auth.signOut()
-    redirect("/login")
+    try {
+        const supabase = await createClient()
+        await supabase.auth.signOut()
+        return redirect("/")
+    } catch (error) {
+        console.error("Error signing out:", error)
+        return redirect("/")
+    }
+}
+
+// Fetch user profile
+export async function fetchUserProfile(userId: string) {
+    try {
+        const supabase = await createClient()
+
+        const { data: profile, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
+
+        if (error) {
+            throw new Error(error.message)
+        }
+
+        return profile
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error
+        }
+        throw new Error("An error occurred while fetching the user profile")
+    }
 }
 

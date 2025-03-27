@@ -66,22 +66,11 @@ export interface Position {
     height: number // Stored as percentage (0-100)
 }
 
-export interface ObjectItem {
-    id: number
-    type: string
-    position: Position
-}
-
 export interface ResourceItem {
     photo?: string
     link?: string
 }
 
-export interface Resources {
-    [objectId: string]: {
-        [index: string]: ResourceItem
-    }
-}
 
 export interface FormData {
     designPlan?: File
@@ -127,4 +116,65 @@ export interface ObjectDetectionResponse {
 export interface ShowroomGenerationResponse {
     showroomUrl: string
     estimatedTime: number
+}
+export interface BoundingBox {
+    max: [number, number] // [x, y] coordinates for max point
+    min: [number, number] // [x, y] coordinates for min point
+}
+
+export interface FurnitureItem {
+    id: string | number
+    ai_guess?: string
+    bbox_px: BoundingBox
+    verified: boolean
+    label?: string
+    furniture_type?: string
+}
+
+export interface Position {
+    x: number
+    y: number
+    width: number
+    height: number
+}
+
+// Update the ObjectItem interface
+export interface ObjectItem {
+    id: number
+    type: string
+    position: Position
+    bbox_px?: BoundingBox
+    ai_guess?: string
+    verified?: boolean
+    user_created?: boolean
+    original_id?: string
+    original_bbox_px?: BoundingBox // Store the original bounding box
+    has_been_modified?: boolean // Track if the object has been moved or resized
+}
+
+export interface ImageDimensions {
+    width: number
+    height: number
+    top: number
+    left: number
+    naturalWidth: number
+    naturalHeight: number
+}
+
+export interface ResourceItem {
+    photo?: string
+    link?: string
+}
+
+export interface Resources {
+    [key: string]: {
+        [key: string]: ResourceItem
+    }
+}
+
+export interface ObjectSelectionProps {
+    formData: FormData
+    updateFormData: (data: FormData) => void
+    onNext: () => void
+    onBack: () => void
 }

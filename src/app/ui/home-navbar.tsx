@@ -11,6 +11,7 @@ import KerpinoLogo from "./kerpino-logo"
 import { motion } from "framer-motion"
 import { ModeToggle } from "./mode-toggle"
 import { ProfileButton } from "./dashboard/profile-button"
+import { usePathname } from "next/navigation"
 
 interface NavItem {
     title: string
@@ -18,7 +19,6 @@ interface NavItem {
 }
 
 const leftNavItems: NavItem[] = [
-    { title: "Home", href: "/" },
     { title: "Order", href: "/order" },
     { title: "Login", href: "/login" },
 ]
@@ -27,8 +27,11 @@ const rightNavItems: NavItem[] = [
     { title: "Blog", href: "/blog" },
     { title: "FAQ", href: "/faq" },
 ]
+interface NavbarProps {
+    isLoading: boolean;
+}
 
-export const Navbar = () => {
+export const Navbar: React.FC<NavbarProps> = ({ isLoading }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
     useEffect(() => {
@@ -45,19 +48,21 @@ export const Navbar = () => {
     return (
         <header className=" top-0 z-50">
             <motion.div
+                initial={{ opacity: 0, y: "30%" }}
+                animate={scrolled ? !isLoading ? { opacity: 1, y: "0%", transition: { duration: 0., ease: "linear", easings: 0 } } : { opacity: 1, y: "0%", transition: { duration: 0.0002, ease: "linear", easings: 0 } } : !isLoading ? { opacity: 1, y: "50%", transition: { duration: 0.5 } } : { opacity: 0, y: "0%", transition: { duration: 0.0002, ease: "linear", easings: 0 } }}
+                transition={{ duration: .2, delay: 0 }}
                 className={cn(
-                    "w-full z-50 transition-all text-zinc-800 dark:text-white ease-in-out duration-1000 fixed  backdrop-blur ",
+                    "w-full absolute z-50 transition-all text-white ease-in-out",
                     scrolled
-                        ? "duration-1000 fixed dark:bg-black/55 bg-zinc-200/55 backdrop-blur supports-[backdrop-filter]:bg-zinc-200/60 dark:supports-[backdrop-filter]:bg-black/60 shadow-sm"
+                        ? "duration-1000 fixed bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60 shadow-sm"
                         : "duration-500 fixed bg-transparent",
                 )}>
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={scrolled ? { opacity: 1, transition: { delay: 1 } } : { opacity: 0 }}
                     transition={{ duration: .2 }}
-                    className="fixed z-50 gap-6 top-4 right-0 flex items-center justify-between px-4 md:px-8 lg:px-12">
-                    <ModeToggle />
-                    <Button className="">
+                    className="fixed top-4 right-0 flex items-center justify-between px-4 md:px-8 lg:px-12">
+                    <Button className="text-black bg-white hover:bg-zinc-200">
                         Order Now
                     </Button>
                 </motion.div>
@@ -73,7 +78,7 @@ export const Navbar = () => {
                                 <Link
                                     key={item.title}
                                     href={item.href}
-                                    className="text-sm font-medium transition-colors hover:dark:text-cyan-200 hover:text-cyan-700"
+                                    className="text-sm font-medium transition-colors hover:text-cyan-200"
                                 >
                                     {item.title}
                                 </Link>
@@ -110,7 +115,7 @@ export const Navbar = () => {
                                 <Link
                                     key={item.title}
                                     href={item.href}
-                                    className="text-sm font-medium transition-colors hover:dark:text-cyan-200 hover:text-cyan-700"
+                                    className="text-sm font-medium transition-colors hover:text-cyan-200"
                                 >
                                     {item.title}
                                 </Link>
