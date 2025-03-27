@@ -233,10 +233,10 @@ export async function signOut() {
     try {
         const supabase = await createClient()
         await supabase.auth.signOut()
-        return redirect("/login")
+        return redirect("/")
     } catch (error) {
         console.error("Error signing out:", error)
-        return redirect("/login")
+        return redirect("/dashboard")
     }
 }
 

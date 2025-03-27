@@ -49,13 +49,6 @@ export default function ResetPasswordPage() {
     <WavyBackground className="flex min-h-[80vh] items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <Link
-            href="/login"
-            className="flex items-center text-sm text-muted-foreground mb-2 hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to login
-          </Link>
           <CardTitle className="text-2xl text-center">Reset Password</CardTitle>
           <CardDescription className="text-center">
             Enter your email address and we&apos;ll send you a link to reset your password

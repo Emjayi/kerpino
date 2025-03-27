@@ -292,6 +292,31 @@ export default function Page() {
                         required
                     />
                     <p className="text-xs text-muted-foreground">We&apos;ll send a verification code to this email</p>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input
+                            id="password"
+                            name="password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                        <p className="text-xs text-muted-foreground">Password must be at least 8 characters long</p>
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="confirmPassword">Confirm Password</Label>
+                        <Input
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                        />
+                    </div>
                 </div>
 
                 <SubmitButton label="Sign Up" />
@@ -342,31 +367,6 @@ export default function Page() {
                             <InputOTPSlot index={5} />
                         </InputOTPGroup>
                     </InputOTP>
-                </div>
-
-                <div className="grid gap-2">
-                    <Label htmlFor="password">Create Password</Label>
-                    <Input
-                        id="password"
-                        name="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                    <p className="text-xs text-muted-foreground">Password must be at least 8 characters long</p>
-                </div>
-
-                <div className="grid gap-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                    />
                 </div>
 
                 <div className="flex gap-2">
@@ -426,7 +426,7 @@ export default function Page() {
     return (
         <div className="flex min-h-screen py-12 justify-center items-center flex-col gap-6">
             <Card className="w-full max-w-md">
-                <CardContent className="grid -mt-[3rem] p-0 md:grid-cols-1">
+                <CardContent className="grid p-0 md:grid-cols-1">
                     {step === "login" && renderLoginForm()}
                     {step === "signup" && renderSignupForm()}
                     {step === "otp-verification" && renderOtpForm()}
