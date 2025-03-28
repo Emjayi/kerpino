@@ -168,10 +168,10 @@ export default function BlogArchive() {
                 </div>
 
                 {/* Sidebar */}
-                <div className="w-full md:w-80 lg:w-96">
-                    <div className=" top-8 space-y-8">
+                <div className="h-full w-full md:w-80 lg:w-96">
+                    <div className="pt-24 top-8 space-y-8">
                         {/* Search */}
-                        <Card className="sticky top-20">
+                        <Card className="fixed w-96 top-20">
                             <CardHeader className="pb-2">
                                 <CardTitle>Search</CardTitle>
                             </CardHeader>

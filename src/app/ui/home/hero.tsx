@@ -42,7 +42,7 @@ export default function Hero() {
                     animate={isLoading ? { y: "-20%", opacity: 0 } : { y: "0%", opacity: 1 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="text-4xl md:text-7xl font-bold text-center pb-2 bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400 bg-opacity-50">
-                    Kerpo MVP
+                    KERPINO
                 </motion.h1>
                 <motion.p
                     initial={{ y: "0%", opacity: 1 }}

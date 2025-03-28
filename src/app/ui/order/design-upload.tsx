@@ -287,10 +287,11 @@ export function DesignUpload({ formData, updateFormData, onNext }: any) {
               name="dimensionValue"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Dimension Value</FormLabel>
-                  <FormControl>
+                  <FormLabel>Overall Dimension Value</FormLabel>
+                  <FormControl className="flex gap-2">
                     <Input type="text" placeholder="e.g. 4x5" {...field} />
                   </FormControl>
+                  <Input type="text" placeholder="e.g. 4x5" {...field} />
                   <FormDescription>Enter dimensions as width x length</FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -319,7 +320,7 @@ export function DesignUpload({ formData, updateFormData, onNext }: any) {
                         <FormControl>
                           <RadioGroupItem value="feet" />
                         </FormControl>
-                        <FormLabel className="font-normal">Feet</FormLabel>
+                        <FormLabel className="font-normal">Imperial</FormLabel>
                       </FormItem>
                     </RadioGroup>
                   </FormControl>
