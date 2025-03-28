@@ -53,8 +53,7 @@ export async function middleware(request: NextRequest) {
                 path === "/faq" ||
                 path === "/signup" ||
                 path.startsWith("/reset-password") ||
-                path.startsWith("/auth") ||
-                path === "/((?!api|_next/static|_next/image|favicon.ico|.*\\.svg).*)"
+                path.startsWith("/auth")
             ) {
                 return response
             }
@@ -103,6 +102,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/((?!api).*)"],
+    matcher: [
+        "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|jpg|jpeg|png|gif|webp|ico)).*)",
+    ],
 }
 
