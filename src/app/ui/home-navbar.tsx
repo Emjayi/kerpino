@@ -23,7 +23,7 @@ const leftNavItems: NavItem[] = [
 ]
 
 const rightNavItems: NavItem[] = [
-    { title: "", href: "/blog" },
+    { title: "Blog", href: "/blog" },
     { title: "FAQ", href: "/faq" },
 ]
 interface NavbarProps {
@@ -59,11 +59,14 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoading }) => {
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={scrolled ? { opacity: 1, transition: { delay: 1 } } : { opacity: 0 }}
+                    exit={{ opacity: 0 }}
                     transition={{ duration: .2 }}
-                    className="fixed top-4 right-0 flex items-center justify-between px-4 md:px-8 lg:px-12">
-                    <Button className="text-black bg-white hover:bg-zinc-200">
-                        Order Now
-                    </Button>
+                    className="fixed z-50 top-4 right-0 flex items-center justify-between px-4 md:px-8 lg:px-12">
+                    <Link href={"/order"}>
+                        <Button className="text-black bg-white hover:bg-zinc-200">
+                            Order Now
+                        </Button>
+                    </Link>
                 </motion.div>
                 <motion.div
                     className="flex h-16 items-center justify-center">
