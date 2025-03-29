@@ -228,14 +228,9 @@ export async function signInWithGoogle(redirectTo = "/dashboard") {
 
 // Sign out action
 export async function signOut() {
-    try {
-        const supabase = await createClient()
-        await supabase.auth.signOut()
-        return redirect("/")
-    } catch (error) {
-        console.error("Error signing out:", error)
-        return redirect("/")
-    }
+    const supabase = await createClient()
+    await supabase.auth.signOut()
+    return redirect("/")
 }
 
 // Fetch user profile
