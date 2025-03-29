@@ -80,6 +80,14 @@ export async function signup(formData: FormData) {
     try {
         const supabase = await createClient();
 
+        // Send OTP to the user's email
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+                emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+            },
+        });
+
         // Check if the email is already registered
         const { data: existingUser, error: fetchError } = await supabase
             .from("profiles") // Replace "profiles" with the correct table name if needed
@@ -94,14 +102,6 @@ export async function signup(formData: FormData) {
         if (existingUser) {
             throw new Error("Email is already registered");
         }
-
-        // Send OTP to the user's email
-        const { data, error } = await supabase.auth.signInWithOtp({
-            email,
-            options: {
-                emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
-            },
-        });
 
         if (error) {
             throw new Error(error.message);
