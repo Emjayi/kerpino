@@ -10,7 +10,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import KerpinoLogo from "./kerpino-logo"
 import { motion } from "framer-motion"
 import { ModeToggle } from "./mode-toggle"
-import { ProfileButton } from "./dashboard/profile-button"
 
 interface NavItem {
     title: string
