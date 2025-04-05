@@ -1,5 +1,5 @@
 "use client"
-import { redirect, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import type React from "react"
 
 import { useState, useEffect } from "react"
@@ -20,6 +20,7 @@ import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp"
 
 export default function Page() {
     const searchParams = useSearchParams()
+    const router = useRouter()
     const next = searchParams.get("next")
     const callbackUrl = next || searchParams.get("callbackUrl") || "/dashboard"
 
@@ -82,16 +83,20 @@ export default function Page() {
             }
 
             // Only show success if we didn't get an error
-            setSuccess("Logged in successfully! Redirecting...")
+            setSuccess("Logged in successfully! Redirecting to dashboard...")
             toast.success("Logged in successfully!")
-
-            // Redirect the user to the dashboard
-            window.location.href = callbackUrl
 
             // Reset auth store after successful login
             reset()
+
+            // Use router.push instead of redirect
+            if (result && typeof result === "object" && "url" in result) {
+                router.push(result.url as string)
+            } else {
+                router.push(callbackUrl)
+            }
         } catch (err) {
-            setError(err instanceof Error && err.message !== "NEXT_REDIRECT" ? err.message : "Login failed. Please try again.")
+            setError(err instanceof Error ? err.message : "Login failed. Please try again.")
             toast.error("Login failed", {
                 description: err instanceof Error ? err.message : "Please try again.",
             })
