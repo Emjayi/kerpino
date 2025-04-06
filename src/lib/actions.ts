@@ -23,24 +23,24 @@ async function createClient() {
     })
 }
 
-export async function login(formData: FormData) {
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
+export async function login(formData: FormData,) {
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
 
     if (!email || !password) {
-        return { error: "Email and password are required" }
+        return { error: "Email and password are required" };
     }
 
     try {
-        const supabase = await createClient()
+        const supabase = await createClient();
 
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
-        })
+        });
 
         if (error) {
-            return { error: error.message }
+            return { error: error.message };
         }
 
         // Check if profile is complete
@@ -48,34 +48,37 @@ export async function login(formData: FormData) {
             .from("profiles")
             .select("first_name, last_name")
             .eq("id", data.user.id)
-            .single()
+            .single();
+
+        // Add a delay before redirecting (1 second)
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // If profile is incomplete, redirect to profile page
         if (!profile || !profile.first_name || !profile.last_name) {
-            return redirect(`/profile?next=${encodeURIComponent("/dashboard")}`)
+            return redirect(`/profile?next=${encodeURIComponent("/dashboard")}`);
         }
 
-        // Return URL for client-side redirection
-        return { url: "/dashboard" }
+        // Always redirect to the dashboard after successful login
+        return redirect("/dashboard");
     } catch (error) {
         if (error instanceof Error) {
-            return { error: error.message }
+            return { error: error.message };
         }
-        return { error: "An error occurred during login" }
+        return { error: "An error occurred during login" };
     }
 }
 
 // Signup action using email OTP
 export async function signup(formData: FormData) {
-    const email = formData.get("email") as string
-    const redirectTo = (formData.get("redirectTo") as string) || "/dashboard"
+    const email = formData.get("email") as string;
+    const redirectTo = (formData.get("redirectTo") as string) || "/dashboard";
 
     if (!email) {
-        throw new Error("Email is required")
+        throw new Error("Email is required");
     }
 
     try {
-        const supabase = await createClient()
+        const supabase = await createClient();
 
         // Send OTP to the user's email
         const { error } = await supabase.auth.signInWithOtp({
@@ -83,34 +86,34 @@ export async function signup(formData: FormData) {
             options: {
                 emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
             },
-        })
+        });
 
         // Check if the email is already registered
         const { data: existingUser, error: fetchError } = await supabase
             .from("profiles") // Replace "profiles" with the correct table name if needed
             .select("email")
             .eq("email", email)
-            .single()
+            .single();
 
         if (fetchError) {
-            throw new Error("Error checking existing users")
+            throw new Error("Error checking existing users");
         }
 
         if (existingUser) {
-            throw new Error("Email is already registered")
+            throw new Error("Email is already registered");
         }
 
         if (error) {
-            throw new Error(error.message)
+            throw new Error(error.message);
         }
 
         // Inform the user to check their email for the OTP
-        return { message: "Check your email for the OTP to complete the sign-up process." }
+        return { message: "Check your email for the OTP to complete the sign-up process." };
     } catch (error) {
         if (error instanceof Error) {
-            throw error
+            throw error;
         }
-        throw new Error("An error occurred during signup")
+        throw new Error("An error occurred during signup");
     }
 }
 
@@ -152,8 +155,8 @@ export async function verifyOtp(formData: FormData) {
             throw new Error(updateError.message)
         }
 
-        // Return URL for client-side redirection
-        return { url: redirectTo }
+        // Redirect to the specified URL after successful verification
+        return redirect(redirectTo)
     } catch (error) {
         if (error instanceof Error) {
             throw error
@@ -202,8 +205,8 @@ export async function completeProfile(formData: FormData) {
         // Add a delay before redirecting (1 second)
         await new Promise((resolve) => setTimeout(resolve, 1000))
 
-        // Return URL for client-side redirection
-        return { url: redirectTo }
+        // Redirect to the specified URL after successful profile completion
+        return redirect(redirectTo)
     } catch (error) {
         if (error instanceof Error) {
             throw error
