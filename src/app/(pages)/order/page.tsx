@@ -50,11 +50,11 @@ export default function KerpinoRegistration() {
     const progressWidth = ((step - 1) / totalSteps) * 115;
 
     return (
-        <div className="container mx-auto py-10 px-4 grid gap-8 grid-cols-12">
-            <div className=" top-[90px] h-32 col-span-2">
+        <div className=" mx-auto py-10 px-4 grid gap-8 md:grid-cols-12">
+            <div className="hidden md:block top-[90px] h-32 col-span-2">
 
             </div>
-            <div className=" fixed top-[90px] h-32 col-span-2">
+            <div className="fixed top-[90px] h-32 col-span-2">
                 <h1 className="text-xl font-bold mb-8">New Order</h1>
 
                 {/* Progress indicator */}
@@ -86,7 +86,7 @@ export default function KerpinoRegistration() {
                 <Button className="fixed bottom-16"><Link href="/">Back to home</Link></Button>
             </div>
 
-            <Card className="mb-8 col-span-8">
+            <Card className="mb-8 col-span-12 lg:col-span-8 md:col-span-10">
                 <CardContent className="pt-6">
                     {step === 1 && (
                         <DesignUpload formData={formData} updateFormData={updateFormData} onNext={nextStep} onBack={prevStep} />
@@ -110,7 +110,7 @@ export default function KerpinoRegistration() {
                 </CardContent>
             </Card>
 
-            <div className="col-span-2 sticky top-[90px] h-32 flex justify-start">
+            <div className="hidden lg:col-span-2 sticky top-[90px] h-32 lg:flex justify-start">
                 <h1 className="text-xl font-bold inline">Help</h1>
 
             </div>

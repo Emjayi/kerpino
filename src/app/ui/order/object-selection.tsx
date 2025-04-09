@@ -38,9 +38,21 @@ import type {
 import { OBJECT_TYPES, RESIZE_HANDLES } from "@/lib/constants/object-selection"
 import { percentToPixels, downloadJSON } from "@/lib/utils/object-selection"
 
+// Extend the ObjectItem type to include angle
+declare module "@/lib/definitions" {
+  interface ObjectItem {
+    angle?: number
+    rotation?: number
+    category?: string
+    ai_label?: string
+    bbox_corners_px?: number[][]
+  }
+}
+
 export function ObjectSelectionAndResources({ formData, updateFormData, onNext, onBack }: ObjectSelectionProps) {
   // Extract objectsJSON from formData
   const objectsJSON = formData.objectsJSON || []
+  const planMetadata = (formData.planMetadata) || null
 
   // State for objects and resources
   const [selectedObjects, setSelectedObjects] = useState<ObjectItem[]>(formData.selectedObjects || [])
@@ -51,12 +63,20 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
   const [imageLoaded, setImageLoaded] = useState<boolean>(false)
   const [furnitureData, setFurnitureData] = useState<FurnitureItem[]>([])
   const [nextUserFurnitureId, setNextUserFurnitureId] = useState<number>(objectsJSON.length + 1)
+  const [selectionInterfacePosition, setSelectionInterfacePosition] = useState<{
+    x: number
+    y: number
+  } | null>(null)
 
   // Drawing state
   const [isDrawing, setIsDrawing] = useState<boolean>(false)
-  const [drawingStep, setDrawingStep] = useState<1 | 2>(1) // 1 = first click (max), 2 = second click (min)
+  const [drawingStep, setDrawingStep] = useState<1 | 2 | 3>(1) // 1 = first click (start), 2 = second click (line), 3 = third click (box)
   const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null)
   const [currentPoint, setCurrentPoint] = useState<{ x: number; y: number } | null>(null)
+  const [lineEndPoint, setLineEndPoint] = useState<{ x: number; y: number } | null>(null)
+  const [isDragging, setIsDragging] = useState<boolean>(false)
+  const [lastClickPosition, setLastClickPosition] = useState<{ x: number; y: number } | null>(null)
+  const [drawingInstructions, setDrawingInstructions] = useState<string>("")
 
   // Refs for DOM elements and measurements
   const imageRef = useRef<HTMLImageElement | null>(null)
@@ -92,7 +112,73 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
 
   // Initialize objects from JSON if selectedObjects is empty
   useEffect(() => {
-    if (selectedObjects.length === 0 && objectsJSON.length > 0) {
+    // First check if we have plan metadata with furniture
+    if (selectedObjects.length === 0 && planMetadata && planMetadata.plans && planMetadata.plans.length > 0) {
+      const plan = planMetadata.plans[0]
+      if (plan.unreal_data && plan.unreal_data.furniture && plan.unreal_data.furniture.length > 0) {
+        const furniture = plan.unreal_data.furniture
+
+        // Convert furniture data to our object format
+        const initialObjects: ObjectItem[] = furniture.map((item: { bbox_corners_px: any; center_px: any[]; ai_label: string; category: any; user_label: any; rotation: number }, index: number) => {
+          // Calculate bounding box dimensions
+          const corners = item.bbox_corners_px
+          const minX = Math.min(...corners.map((corner: number[]) => corner[0]))
+          const minY = Math.min(...corners.map((corner: number[]) => corner[1]))
+          const maxX = Math.max(...corners.map((corner: number[]) => corner[0]))
+          const maxY = Math.max(...corners.map((corner: number[]) => corner[1]))
+
+          // Calculate center, width, and height
+          const centerX = item.center_px[0]
+          const centerY = item.center_px[1]
+          const width = maxX - minX
+          const height = maxY - minY
+
+          // Convert to percentages based on image dimensions
+          const imgWidth = plan.revit_data.pixel_dimensions.width
+          const imgHeight = plan.revit_data.pixel_dimensions.height
+
+          const percentX = (centerX / imgWidth) * 100
+          const percentY = (centerY / imgHeight) * 100
+          const percentWidth = (width / imgWidth) * 100
+          const percentHeight = (height / imgHeight) * 100
+
+          // Extract ID from ai_label
+          const idMatch = item.ai_label.match(/\d+/)
+          const numericId = idMatch ? Number.parseInt(idMatch[0]) : index + 1
+
+          return {
+            id: numericId,
+            type: item.category || "",
+            position: {
+              x: percentX,
+              y: percentY,
+              width: percentWidth,
+              height: percentHeight,
+            },
+            bbox_px: {
+              min: [minX, minY],
+              max: [maxX, maxY],
+            },
+            ai_guess: item.category || "",
+            verified: !!item.user_label,
+            original_id: item.ai_label,
+            rotation: item.rotation,
+            category: item.category,
+            ai_label: item.ai_label,
+            bbox_corners_px: item.bbox_corners_px,
+            angle: (item.rotation * Math.PI) / 180, // Convert degrees to radians
+          }
+        })
+
+        setSelectedObjects(initialObjects)
+
+        // Find the highest ID to set the next ID counter
+        const highestId = Math.max(...initialObjects.map((obj) => obj.id))
+        setNextUserFurnitureId(highestId + 1)
+      }
+    }
+    // Fallback to the original JSON parsing if no plan metadata
+    else if (selectedObjects.length === 0 && objectsJSON.length > 0) {
       // Parse the JSON data to extract furniture items with bounding boxes
       const parsedFurniture = objectsJSON
         .map((item: any, index: number) => {
@@ -157,7 +243,7 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
         setNextUserFurnitureId(Math.max(...userIds) + 1)
       }
     }
-  }, [selectedObjects.length, objectsJSON])
+  }, [selectedObjects.length, objectsJSON, planMetadata])
 
   // Update image dimensions - using a callback to avoid recreating function
   const updateImageDimensions = useCallback(() => {
@@ -234,20 +320,46 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
     }
   }, [previewUrl])
 
+  // Update drawing instructions based on drawing step
+  useEffect(() => {
+    if (isDrawing) {
+      if (drawingStep === 2) {
+        setDrawingInstructions("Click again to set the direction of the object")
+      } else if (drawingStep === 3) {
+        setDrawingInstructions("Click a third time to create the object on one side of the line")
+      }
+    } else {
+      setDrawingInstructions(
+        "Click once to set the starting point, then click again to draw a line, and a third time to create the object.",
+      )
+    }
+  }, [drawingStep, isDrawing])
+
   // Handle box click
   const handleBoxClick = (id: number, e: React.MouseEvent) => {
     if (isDraggingRef.current || isResizingRef.current) {
       e.stopPropagation()
       return
     }
-    setSelectedBoxId(id === selectedBoxId ? null : id)
+
+    // Set the position for the selection interface next to the cursor
+    setSelectionInterfacePosition({
+      x: e.clientX,
+      y: e.clientY,
+    })
+
+    setSelectedBoxId(id)
   }
 
   // Handle object type change
   const handleObjectTypeChange = (id: number, type: string) => {
     setSelectedObjects((objects) => objects.map((obj) => (obj.id === id ? { ...obj, type, verified: true } : obj)))
-    // Auto-close the selection after choosing a type
+    // Clear the selection interface position to hide it
+    setSelectionInterfacePosition(null)
     setSelectedBoxId(null)
+
+    // Continue drawing process immediately
+    setDrawingStep(1)
   }
 
   // Handle AI guess verification
@@ -266,6 +378,15 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
         return obj
       }),
     )
+
+    // If accepting AI guess, hide the interface
+    if (accept) {
+      setSelectionInterfacePosition(null)
+      setSelectedBoxId(null)
+
+      // Continue drawing process immediately
+      setDrawingStep(1)
+    }
   }
 
   // Handle adding custom type
@@ -304,12 +425,16 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
     setSelectedObjects((prev) => prev.filter((obj) => obj.id !== id))
     if (selectedBoxId === id) {
       setSelectedBoxId(null)
+      setSelectionInterfacePosition(null)
     }
 
     // Also remove resources for this object
     const updatedResources = { ...resources }
     delete updatedResources[id.toString()]
     setResources(updatedResources)
+
+    // Continue drawing process immediately
+    setDrawingStep(1)
   }
 
   // Drag start handler
@@ -599,7 +724,7 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
     document.removeEventListener("mouseup", handleResizeEnd)
   }, [handleResizeMove])
 
-  // Drawing handlers - updated for two-click system
+  // Drawing handlers - updated for three-click system with line drawing
   const handleMouseDown = (e: React.MouseEvent) => {
     // Always allow drawing, even if a box is selected
     if (isDraggingRef.current || isResizingRef.current) return
@@ -618,102 +743,193 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
         return // Click outside image bounds
       }
 
+      // Store the last click position for interface positioning
+      setLastClickPosition({ x: e.clientX, y: e.clientY })
+
       // If a box is selected, deselect it first
       if (selectedBoxId && drawingStep === 1) {
         boxEscape()
         return
       }
 
-      if (!selectedBoxId && drawingStep === 1) {
-        // First click - set max point
-        setIsDrawing(true)
-        setStartPoint({ x, y })
-        setCurrentPoint({ x, y })
-        setDrawingStep(2)
-      } else if (drawingStep === 2) {
-        // Second click - set min point and create object
-        if (startPoint) {
-          // Calculate rectangle dimensions in pixels
-          const maxX = Math.max(startPoint.x, x)
-          const maxY = Math.max(startPoint.y, y)
-          const minX = Math.min(startPoint.x, x)
-          const minY = Math.min(startPoint.y, y)
+      if (!selectedBoxId) {
+        if (drawingStep === 1) {
+          // First click - set start point
+          setIsDrawing(true)
+          setStartPoint({ x, y })
+          setCurrentPoint({ x, y })
+          setDrawingStep(2)
+        } else if (drawingStep === 2) {
+          // Second click - set line end point (just draw a line, not a box)
+          setLineEndPoint({ x, y })
+          setDrawingStep(3)
+        } else if (drawingStep === 3) {
+          // Third click - create object based on the cursor's position relative to the line
+          if (startPoint && lineEndPoint) {
+            // Calculate the line vector
+            const lineVectorX = lineEndPoint.x - startPoint.x
+            const lineVectorY = lineEndPoint.y - startPoint.y
+            const lineLength = Math.hypot(lineVectorX, lineVectorY)
 
-          const width = maxX - minX
-          const height = maxY - minY
+            // Calculate the angle of the line
+            const lineAngle = Math.atan2(lineVectorY, lineVectorX)
 
-          // Only create a box if it's big enough
-          if (width > 10 && height > 10) {
-            const centerX = minX + width / 2
-            const centerY = minY + height / 2
+            // Calculate the vector from the line to the current point
+            const cursorVectorX = x - startPoint.x
+            const cursorVectorY = y - startPoint.y
 
-            // Convert to percentages
-            const { width: imgWidth, height: imgHeight } = imageDimensionsRef.current
-            const percentX = (centerX / imgWidth) * 100
-            const percentY = (centerY / imgHeight) * 100
-            const percentWidth = (width / imgWidth) * 100
-            const percentHeight = (height / imgHeight) * 100
+            // Calculate the perpendicular distance from the cursor to the line
+            // Using the formula for distance from a point to a line
+            const perpDistance =
+              Math.abs(lineVectorX * (startPoint.y - y) - lineVectorY * (startPoint.x - x)) / lineLength
 
-            // Create bbox_px
-            const bbox_px = {
-              min: [
-                (minX / imgWidth) * imageRef.current.naturalWidth,
-                (minY / imgHeight) * imageRef.current.naturalHeight,
-              ],
-              max: [
-                (maxX / imgWidth) * imageRef.current.naturalWidth,
-                (maxY / imgHeight) * imageRef.current.naturalHeight,
-              ],
+            // Determine which side of the line the cursor is on
+            // Using the cross product to determine the sign
+            const crossProduct = lineVectorX * (y - startPoint.y) - lineVectorY * (x - startPoint.x)
+            const side = Math.sign(crossProduct)
+
+            // Set the width to be the line length
+            const width = lineLength
+
+            // Set the height to be the perpendicular distance (only on one side)
+            const height = perpDistance
+
+            // Calculate the center point of the rectangle
+            // It should be at the midpoint of the line, offset by half the height in the perpendicular direction
+            const midpointX = (startPoint.x + lineEndPoint.x) / 2
+            const midpointY = (startPoint.y + lineEndPoint.y) / 2
+
+            // Calculate the perpendicular unit vector
+            const perpVectorX = -lineVectorY / lineLength
+            const perpVectorY = lineVectorX / lineLength
+
+            // Adjust the direction based on which side of the line the cursor is on
+            const adjustedPerpVectorX = perpVectorX * side
+            const adjustedPerpVectorY = perpVectorY * side
+
+            // Calculate the center of the rectangle
+            const centerX = midpointX + (adjustedPerpVectorX * height) / 2
+            const centerY = midpointY + (adjustedPerpVectorY * height) / 2
+
+            // Only create a box if it's big enough
+            if (width > 10 && height > 10) {
+              // Convert to percentages
+              const { width: imgWidth, height: imgHeight } = imageDimensionsRef.current
+              const percentX = (centerX / imgWidth) * 100
+              const percentY = (centerY / imgHeight) * 100
+              const percentWidth = (width / imgWidth) * 100
+              const percentHeight = (height / imgHeight) * 100
+
+              // Calculate the corners of the box in the image coordinate system
+              // For the bbox_px, we need to calculate the min and max points
+              // We'll calculate the four corners of the rotated rectangle
+              const halfWidth = width / 2
+              const halfHeight = height / 2
+
+              // Calculate the four corners of the rotated rectangle
+              const corners = [
+                {
+                  x: centerX - halfWidth * Math.cos(lineAngle) - halfHeight * Math.sin(lineAngle),
+                  y: centerY - halfWidth * Math.sin(lineAngle) + halfHeight * Math.cos(lineAngle),
+                },
+                {
+                  x: centerX + halfWidth * Math.cos(lineAngle) - halfHeight * Math.sin(lineAngle),
+                  y: centerY + halfWidth * Math.sin(lineAngle) + halfHeight * Math.cos(lineAngle),
+                },
+                {
+                  x: centerX + halfWidth * Math.cos(lineAngle) + halfHeight * Math.sin(lineAngle),
+                  y: centerY + halfWidth * Math.sin(lineAngle) - halfHeight * Math.cos(lineAngle),
+                },
+                {
+                  x: centerX - halfWidth * Math.cos(lineAngle) + halfHeight * Math.sin(lineAngle),
+                  y: centerY - halfWidth * Math.sin(lineAngle) - halfHeight * Math.cos(lineAngle),
+                },
+              ]
+
+              // Find min and max coordinates for the bbox
+              const minX = Math.min(...corners.map((c) => c.x))
+              const minY = Math.min(...corners.map((c) => c.y))
+              const maxX = Math.max(...corners.map((c) => c.x))
+              const maxY = Math.max(...corners.map((c) => c.y))
+
+              // Create bbox_px
+              const bbox_px = {
+                min: [
+                  (minX / imgWidth) * imageRef.current.naturalWidth,
+                  (minY / imgHeight) * imageRef.current.naturalHeight,
+                ],
+                max: [
+                  (maxX / imgWidth) * imageRef.current.naturalWidth,
+                  (maxY / imgHeight) * imageRef.current.naturalHeight,
+                ],
+              }
+
+              const newId = nextUserFurnitureId
+              setNextUserFurnitureId((prev) => prev + 1)
+
+              const newObject: ObjectItem = {
+                id: newId,
+                type: "",
+                position: {
+                  x: percentX,
+                  y: percentY,
+                  width: percentWidth,
+                  height: percentHeight,
+                },
+                bbox_px: {
+                  min: [bbox_px.min[0], bbox_px.min[1]],
+                  max: [bbox_px.max[0], bbox_px.max[1]],
+                },
+                ai_guess: "",
+                verified: false,
+                user_created: true,
+                original_id: `furniture_${newId}`,
+                angle: lineAngle, // Store the angle for rendering
+              }
+
+              setSelectedObjects((prev) => [...prev, newObject])
+
+              // Set the selected box ID
+              setSelectedBoxId(newId)
+
+              // Position the interface next to the cursor
+              setSelectionInterfacePosition({
+                x: e.clientX,
+                y: e.clientY,
+              })
             }
 
-            const newId = nextUserFurnitureId
-            setNextUserFurnitureId((prev) => prev + 1)
-
-            const newObject: ObjectItem = {
-              id: newId,
-              type: "",
-              position: {
-                x: percentX,
-                y: percentY,
-                width: percentWidth,
-                height: percentHeight,
-              },
-              bbox_px: {
-                min: [bbox_px.min[0], bbox_px.min[1]],
-                max: [bbox_px.max[0], bbox_px.max[1]],
-              },
-              ai_guess: "",
-              verified: false,
-              user_created: true,
-              original_id: `furniture_${newId}`,
-            }
-
-            setSelectedObjects((prev) => [...prev, newObject])
-            setSelectedBoxId(newId)
+            // Reset drawing state but don't reset the drawing step
+            // This allows for uninterrupted drawing
+            setIsDrawing(false)
+            setStartPoint(null)
+            setCurrentPoint(null)
+            setLineEndPoint(null)
+            // Don't reset drawing step here to allow continuous drawing
           }
-
-          // Reset drawing state
-          setIsDrawing(false)
-          setStartPoint(null)
-          setCurrentPoint(null)
-          setDrawingStep(1)
         }
       }
     }
   }
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDrawing || !containerRef.current || drawingStep !== 2) return
+    if (!isDrawing || !containerRef.current) return
 
     const containerRect = containerRef.current.getBoundingClientRect()
     const x = e.clientX - containerRect.left
     const y = e.clientY - containerRect.top
 
-    setCurrentPoint({ x, y })
+    if (drawingStep === 2) {
+      // During line drawing
+      setCurrentPoint({ x, y })
+    } else if (drawingStep === 3 && startPoint && lineEndPoint) {
+      // During box creation after line is drawn
+      setCurrentPoint({ x, y })
+    }
   }
 
   const handleMouseUp = () => {
-    // We don't complete drawing on mouse up anymore - we wait for the second click
+    // We don't complete drawing on mouse up anymore - we wait for the clicks
     // This is just a fallback in case of issues
     if (drawingStep === 1) {
       setIsDrawing(false)
@@ -763,11 +979,66 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
     })
   }
 
+  // Validate if a URL is an image URL
+  const isImageUrl = (url: string): boolean => {
+    if (!url) return false
+    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp"]
+    const lowerCaseUrl = url.toLowerCase()
+    return (
+      imageExtensions.some((ext) => lowerCaseUrl.endsWith(ext)) ||
+      lowerCaseUrl.includes("/image/") ||
+      lowerCaseUrl.includes("images.") ||
+      lowerCaseUrl.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?.*)?$/) !== null
+    )
+  }
+
+  // Handle adding a new resource to an object
+  const handleAddResource = (objectId: number) => {
+    // Find the highest index currently used
+    const currentResources = resources[objectId] || {}
+    const indices = Object.keys(currentResources).map(Number)
+
+    // If no resources exist, start with index 0
+    // Otherwise, find the next available index (either a gap or the next number)
+    let nextIndex = 0
+    if (indices.length > 0) {
+      // Sort indices to find gaps
+      const sortedIndices = [...indices].sort((a, b) => a - b)
+
+      // Find the first gap in indices, or use the next number if no gaps
+      for (let i = 0; i < sortedIndices.length; i++) {
+        if (sortedIndices[i] !== i) {
+          nextIndex = i
+          break
+        }
+      }
+
+      // If no gaps found, use the next number
+      if (nextIndex === 0) {
+        nextIndex = sortedIndices.length
+      }
+    }
+
+    // Ensure we don't exceed the maximum of 3 resources
+    if (indices.length >= 3) {
+      return
+    }
+
+    // Add a new empty resource
+    setResources((prev) => ({
+      ...prev,
+      [objectId]: {
+        ...(prev[objectId] || {}),
+        [nextIndex]: { link: "", photo: "" },
+      },
+    }))
+  }
+
   // Generate and download JSON
   const handleExportJSON = () => {
     // Create a new JSON structure based on the original format
     const exportData = selectedObjects.map((obj) => {
-      const originalId = `furniture_${obj.id}`
+      const originalId = obj.original_id || `furniture_${obj.id}`
 
       // Use the original bbox_px if it exists and the object hasn't been moved or resized
       let exportBbox = obj.bbox_px
@@ -794,8 +1065,19 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
 
   // Handle form submission
   const handleSubmit = () => {
-    updateFormData({ selectedObjects, objectResources: resources })
-    onNext()
+    // Check if all objects with a type have at least one resource
+    const objectsWithType = selectedObjects.filter((obj) => obj.type)
+    const allHaveResources = objectsWithType.every(
+      (obj) => resources[obj.id] && Object.keys(resources[obj.id]).length > 0,
+    )
+
+    if (allHaveResources) {
+      updateFormData({ selectedObjects, objectResources: resources })
+      onNext()
+    } else {
+      // If validation fails, switch to resources tab to prompt user
+      setActiveTab("resources")
+    }
   }
 
   // Handle image load
@@ -819,7 +1101,8 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
       top: `${pixelY}px`,
       width: `${pixelWidth}px`,
       height: `${pixelHeight}px`,
-      transform: "translate(-50%, -50%)",
+      transform: `translate(-50%, -50%) ${obj.angle ? `rotate(${obj.angle}rad)` : ""}`,
+      transformOrigin: "center center",
     }
   }
 
@@ -839,23 +1122,91 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
     return styles[position]
   }
 
-  // Get drawing rectangle style
+  // Get drawing rectangle style for the third click
   const getDrawingRectStyle = (): React.CSSProperties | null => {
-    if (!isDrawing || !startPoint || !currentPoint) return null
+    if (drawingStep !== 3 || !startPoint || !lineEndPoint || !currentPoint) return null
 
-    const left = Math.min(startPoint.x, currentPoint.x)
-    const top = Math.min(startPoint.y, currentPoint.y)
-    const width = Math.abs(currentPoint.x - startPoint.x)
-    const height = Math.abs(currentPoint.y - startPoint.y)
+    // Calculate the line vector
+    const lineVectorX = lineEndPoint.x - startPoint.x
+    const lineVectorY = lineEndPoint.y - startPoint.y
+    const lineLength = Math.hypot(lineVectorX, lineVectorY)
+
+    // Calculate the angle of the line
+    const lineAngle = Math.atan2(lineVectorY, lineVectorX)
+
+    // Calculate the vector from the line to the current point
+    const cursorVectorX = currentPoint.x - startPoint.x
+    const cursorVectorY = currentPoint.y - startPoint.y
+
+    // Calculate the perpendicular distance from the cursor to the line
+    const perpDistance =
+      Math.abs(lineVectorX * (startPoint.y - currentPoint.y) - lineVectorY * (startPoint.x - currentPoint.x)) /
+      lineLength
+
+    // Determine which side of the line the cursor is on
+    const crossProduct = lineVectorX * (currentPoint.y - startPoint.y) - lineVectorY * (currentPoint.x - startPoint.x)
+    const side = Math.sign(crossProduct)
+
+    // Calculate the perpendicular unit vector
+    const perpVectorX = -lineVectorY / lineLength
+    const perpVectorY = lineVectorX / lineLength
+
+    // Adjust the direction based on which side of the line the cursor is on
+    const adjustedPerpVectorX = perpVectorX * side
+    const adjustedPerpVectorY = perpVectorY * side
+
+    // Calculate the midpoint of the line
+    const midpointX = (startPoint.x + lineEndPoint.x) / 2
+    const midpointY = (startPoint.y + lineEndPoint.y) / 2
+
+    // Calculate the center of the rectangle (offset from the midpoint in the perpendicular direction)
+    const centerX = midpointX + (adjustedPerpVectorX * perpDistance) / 2
+    const centerY = midpointY + (adjustedPerpVectorY * perpDistance) / 2
 
     return {
       position: "absolute",
-      left: `${left}px`,
-      top: `${top}px`,
-      width: `${width}px`,
-      height: `${height}px`,
+      left: `${centerX}px`,
+      top: `${centerY}px`,
+      width: `${lineLength}px`,
+      height: `${perpDistance}px`,
+      transform: `translate(-50%, -50%) rotate(${lineAngle}rad)`,
       border: "2px dashed #3b82f6",
       backgroundColor: "rgba(59, 130, 246, 0.1)",
+      pointerEvents: "none",
+      transformOrigin: "center center",
+    }
+  }
+
+  // Get drawing line style for the first step
+  const getDrawingLineStyle = (): React.CSSProperties | null => {
+    if (!isDrawing || !startPoint || !currentPoint || drawingStep !== 2) return null
+
+    return {
+      position: "absolute",
+      left: `${startPoint.x}px`,
+      top: `${startPoint.y}px`,
+      width: `${Math.hypot(currentPoint.x - startPoint.x, currentPoint.y - startPoint.y)}px`,
+      height: "2px",
+      backgroundColor: "#3b82f6",
+      transformOrigin: "left center",
+      transform: `rotate(${Math.atan2(currentPoint.y - startPoint.y, currentPoint.x - startPoint.x)}rad)`,
+      pointerEvents: "none",
+    }
+  }
+
+  // Get fixed line style (after second click)
+  const getFixedLineStyle = (): React.CSSProperties | null => {
+    if (!startPoint || !lineEndPoint || drawingStep !== 3) return null
+
+    return {
+      position: "absolute",
+      left: `${startPoint.x}px`,
+      top: `${startPoint.y}px`,
+      width: `${Math.hypot(lineEndPoint.x - startPoint.x, lineEndPoint.y - startPoint.y)}px`,
+      height: "2px",
+      backgroundColor: "#22c55e", // Green color for the fixed line
+      transformOrigin: "left center",
+      transform: `rotate(${Math.atan2(lineEndPoint.y - startPoint.y, lineEndPoint.x - startPoint.x)}rad)`,
       pointerEvents: "none",
     }
   }
@@ -863,20 +1214,35 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
   // Deselect the current box
   const boxEscape = () => {
     setSelectedBoxId(null)
+    setSelectionInterfacePosition(null)
+
+    // Continue drawing process immediately
+    setDrawingStep(1)
   }
 
   // Get object display name
   const getObjectDisplayName = (obj: ObjectItem): string => {
-    const idPart = `furniture_${obj.id}`
+    const idPart = obj.original_id || `furniture_${obj.id}`
     if (obj.type) {
       return `${idPart} (${obj.type})`
     }
     return idPart
   }
 
+  // Check if device is mobile
+  const isMobile = () => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth <= 768
+    }
+    return false
+  }
+
+  // Get the selected object
+  const selectedObject = selectedBoxId !== null ? selectedObjects.find((obj) => obj.id === selectedBoxId) : null
+
   return (
     <div className="space-y-6">
-      <div className="flex space-x-2 border-b">
+      <div className="flex space-x-2 border-b overflow-x-auto">
         <Button
           variant={activeTab === "selection" ? "default" : "ghost"}
           className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
@@ -901,22 +1267,72 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Select Objects in Your Plan</h2>
             <p className="text-muted-foreground">
-              Click once to set the first corner of a bounding box, then click again to complete it. Verify AI
-              suggestions or manually select object types. You can also drag boxes to reposition them.
+              Click once to set the starting point, click again to draw a line, and click a third time to create the
+              object on one side of the line.
             </p>
 
             <div
-              className="flex flex-col relative border rounded-lg overflow-visible"
+              className="flex flex-col relative border rounded-lg overflow-visible select-none"
               ref={containerRef}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
+              onMouseDown={(e) => {
+                handleMouseDown(e)
+                if (drawingStep === 2) {
+                  // If we're in the second step, we can start dragging
+                  setIsDragging(true)
+                }
+              }}
+              onMouseMove={(e) => {
+                handleMouseMove(e)
+                if (isDragging && drawingStep === 2) {
+                  // Update current point while dragging
+                  if (containerRef.current) {
+                    const containerRect = containerRef.current.getBoundingClientRect()
+                    const x = e.clientX - containerRect.left
+                    const y = e.clientY - containerRect.top
+                    setCurrentPoint({ x, y })
+                  }
+                }
+              }}
+              onMouseUp={(e) => {
+                if (isDragging && drawingStep === 2) {
+                  // Complete the line on mouseup
+                  if (containerRef.current && startPoint) {
+                    const containerRect = containerRef.current.getBoundingClientRect()
+                    const x = e.clientX - containerRect.left
+                    const y = e.clientY - containerRect.top
+                    setLineEndPoint({ x, y })
+                    setDrawingStep(3)
+                  }
+                }
+                setIsDragging(false)
+                handleMouseUp()
+              }}
+              onTouchStart={(e) => {
+                const touch = e.touches[0]
+                const mouseEvent = new MouseEvent("mousedown", {
+                  clientX: touch.clientX,
+                  clientY: touch.clientY,
+                })
+                handleMouseDown(mouseEvent as unknown as React.MouseEvent)
+              }}
+              onTouchMove={(e) => {
+                const touch = e.touches[0]
+                const mouseEvent = new MouseEvent("mousemove", {
+                  clientX: touch.clientX,
+                  clientY: touch.clientY,
+                })
+                handleMouseMove(mouseEvent as unknown as React.MouseEvent)
+              }}
+              onTouchEnd={() => {
+                handleMouseUp()
+              }}
               onMouseLeave={() => {
                 if (isDrawing) {
                   setIsDrawing(false)
                   setStartPoint(null)
                   setCurrentPoint(null)
-                  setDrawingStep(1)
+                  setLineEndPoint(null)
+                  // Don't reset drawing step to allow continuous drawing
                 }
               }}
             >
@@ -927,14 +1343,21 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
                   src={previewUrl || "/placeholder.svg?height=1024&width=1024"}
                   alt="Your bedroom plan"
                   fill
-                  className="object-contain select-none"
+                  className="object-contain select-none pointer-events-none"
                   crossOrigin="anonymous"
                   onLoad={handleImageLoad}
                   priority
+                  draggable="false"
                 />
 
-                {/* Drawing rectangle */}
-                {isDrawing && getDrawingRectStyle() && <div style={getDrawingRectStyle() || {}} />}
+                {/* Drawing line during first step */}
+                {getDrawingLineStyle() && <div style={getDrawingLineStyle() || {}} />}
+
+                {/* Fixed line after second click */}
+                {getFixedLineStyle() && <div style={getFixedLineStyle() || {}} />}
+
+                {/* Drawing rectangle during third step */}
+                {getDrawingRectStyle() && <div style={getDrawingRectStyle() || {}} />}
 
                 {/* Selectable boxes - only render when image is loaded */}
                 {imageLoaded &&
@@ -951,6 +1374,15 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
                       style={getBoxStyle(obj, imageDimensionsRef.current)}
                       onClick={(e) => handleBoxClick(obj.id, e)}
                       onMouseDown={(e) => handleDragStart(e, obj.id)}
+                      onTouchStart={(e) => {
+                        e.stopPropagation()
+                        const touch = e.touches[0]
+                        const mouseEvent = new MouseEvent("mousedown", {
+                          clientX: touch.clientX,
+                          clientY: touch.clientY,
+                        })
+                        handleDragStart(mouseEvent as unknown as React.MouseEvent, obj.id)
+                      }}
                     >
                       {/* Resize handles - only show when selected */}
                       {selectedBoxId === obj.id &&
@@ -963,6 +1395,15 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
                               cursor: handle.cursor,
                             }}
                             onMouseDown={(e) => handleResizeStart(e, obj.id, handle.position)}
+                            onTouchStart={(e) => {
+                              e.stopPropagation()
+                              const touch = e.touches[0]
+                              const mouseEvent = new MouseEvent("mousedown", {
+                                clientX: touch.clientX,
+                                clientY: touch.clientY,
+                              })
+                              handleResizeStart(mouseEvent as unknown as React.MouseEvent, obj.id, handle.position)
+                            }}
                           />
                         ))}
 
@@ -991,6 +1432,11 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
                             className="h-6 w-6 p-0 bg-red-300 hover:bg-red-500 border-red-800"
                             onClick={(e) => {
                               e.stopPropagation()
+                              // Position the interface next to the cursor
+                              setSelectionInterfacePosition({
+                                x: e.clientX,
+                                y: e.clientY,
+                              })
                               setSelectedBoxId(obj.id)
                             }}
                           >
@@ -999,84 +1445,10 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
                         </div>
                       )}
 
-                      {/* Object Selection Interface - Only show when selected and either rejected AI or manually added */}
-                      {selectedBoxId === obj.id && (
-                        <div className="absolute z-[50] top-0 left-1/2 transform -translate-x-1/2 -translate-y-[30px] flex flex-col items-center w-full h-full">
-                          <div className="bg-background rounded-md py-1 px-2 shadow-md text-center">
-                            <div className="p-0 m-0 items-center min-w-36 flex gap-2">
-                              <Select value={obj.type} onValueChange={(value) => handleObjectTypeChange(obj.id, value)}>
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select object type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {OBJECT_TYPES.map((type) => (
-                                    <SelectItem key={type} value={type}>
-                                      {type.replace("_", " ")}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="w-full border-red-400"
-                                onClick={() => boxEscape()}
-                              >
-                                Cancel
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="max-h-8 min-w-8 border-destructive hover:bg-destructive group"
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive group-hover:text-background" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This action cannot be undone. This will permanently delete your object and remove
-                                      it from the design.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={(e) => {
-                                        e.preventDefault()
-                                        handleRemoveObject(obj.id)
-                                        boxEscape()
-                                      }}
-                                    >
-                                      Continue
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Object Label */}
-                      {obj.type && (
-                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-background px-2 py-1 rounded text-xs font-medium shadow">
-                          {obj.type}
-                        </div>
-                      )}
+                      {/* Object type label hidden for now */}
                     </div>
                   ))}
               </div>
-
-              {/* Drawing instructions */}
-              {isDrawing && drawingStep === 2 && (
-                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-background/90 px-3 py-2 rounded-md shadow-md">
-                  <p className="text-sm font-medium">Click again to complete the bounding box</p>
-                </div>
-              )}
 
               {/* Export JSON button */}
               {imageLoaded && (
@@ -1087,80 +1459,183 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
                 </div>
               )}
             </div>
+
+            {/* Positioned Object Selection Interface - Now positioned next to the cursor */}
+            {selectedBoxId !== null && selectionInterfacePosition && (
+              <div
+                className="fixed z-[1000] bg-background rounded-md shadow-lg border p-4"
+                style={{
+                  left: `${selectionInterfacePosition.x}px`,
+                  top: `${selectionInterfacePosition.y}px`,
+                  width: "240px",
+                  maxWidth: "90vw",
+                }}
+              >
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium">Select Object Type</h3>
+
+                  {selectedObject && (
+                    <>
+                      <Select
+                        value={selectedObject.type}
+                        onValueChange={(value) => handleObjectTypeChange(selectedBoxId, value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select object type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {OBJECT_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type.replace("_", " ")}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {selectedObject.ai_guess && !selectedObject.verified && (
+                        <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                          <p className="text-sm">
+                            AI suggests: <span className="font-medium">{selectedObject.ai_guess}</span>
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-auto"
+                            onClick={() => handleVerifyAiGuess(selectedBoxId, true)}
+                          >
+                            <Check className="h-4 w-4 mr-1" /> Accept
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  <div className="flex justify-between">
+                    <Button variant="outline" size="sm" onClick={boxEscape}>
+                      Cancel
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="h-4 w-4 mr-2" /> Remove
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete your object and remove it from
+                            the design.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => {
+                              if (selectedBoxId !== null) {
+                                handleRemoveObject(selectedBoxId)
+                              }
+                            }}
+                          >
+                            Continue
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Selected Objects</h2>
 
             {selectedObjects.length > 0 ? (
-              <Table>
-                <TableHeader className="z-0">
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Object Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedObjects.map((obj) => (
-                    <TableRow key={obj.id} className={selectedBoxId === obj.id ? "bg-muted" : ""}>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {`furniture_${obj.id}`}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {obj.type ? obj.type.replace("_", " ") : <span className="text-yellow-600">Not selected</span>}
-                      </TableCell>
-                      <TableCell>
-                        {obj.verified ? (
-                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-                            Verified
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                            Pending
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete your object and remove
-                                  it from the design.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    handleRemoveObject(obj.id)
-                                    boxEscape()
-                                  }}
-                                >
-                                  Continue
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-
-                        </div>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="z-0">
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Object Type</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedObjects.map((obj) => (
+                      <TableRow key={obj.id} className={selectedBoxId === obj.id ? "bg-muted" : ""}>
+                        <TableCell>
+                          <Badge variant="outline">{obj.original_id || `furniture_${obj.id}`}</Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {obj.type ? (
+                            obj.type.replace("_", " ")
+                          ) : (
+                            <span className="text-yellow-600">Not selected</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {obj.verified ? (
+                            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
+                              Verified
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                              Pending
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                // Position the interface next to the cursor
+                                setSelectionInterfacePosition({
+                                  x: e.clientX,
+                                  y: e.clientY,
+                                })
+                                setSelectedBoxId(obj.id)
+                              }}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete your object and remove it
+                                    from the design.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      handleRemoveObject(obj.id)
+                                    }}
+                                  >
+                                    Continue
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             ) : (
               <div className="border rounded-lg p-4 text-center text-muted-foreground">
                 No objects detected. Click on the image to add objects.
@@ -1185,98 +1660,178 @@ export function ObjectSelectionAndResources({ formData, updateFormData, onNext, 
               {selectedObjects.some((obj) => obj.type) ? "Continue to Resources" : "Skip Resources"}
             </Button>
           </div>
-        </div >
-      )
-      }
+        </div>
+      )}
 
-      {
-        activeTab === "resources" && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Upload Object Resources</h2>
-            <p className="text-muted-foreground">
-              Please upload photos and provide links for desired options for each selected object.
-            </p>
+      {activeTab === "resources" && (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold">Upload Object Resources</h2>
+          <p className="text-muted-foreground">
+            Please upload photos for each selected object. You can add up to 3 images per object.
+          </p>
 
-            {selectedObjects
-              .filter((obj) => obj.type)
-              .map((object) => (
+          {selectedObjects
+            .filter((obj) => obj.type)
+            .map((object) => {
+              // Get the current resources for this object
+              const objectResources = resources[object.id] || {}
+              const resourceCount = Object.keys(objectResources).length
+
+              return (
                 <Card key={object.id} className="p-4">
                   <h3 className="text-xl font-semibold mb-4">{getObjectDisplayName(object)}</h3>
-                  <div className="flex flex-wrap gap-4">
-                    {[0, 1, 2].map((index) => (
-                      <div key={index} className="mb-4 p-4 border rounded-md w-full md:w-[calc(33.333%-1rem)]">
-                        <h4 className="text-lg font-medium mb-2">Option {index + 1}</h4>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor={`${object.id}-${index}-photo`}>Photo</Label>
-                            <div className="mt-1 flex items-center">
-                              <div className="relative">
-                                <Input
-                                  id={`${object.id}-${index}-photo`}
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) => handleFileChange(object.id, index, e)}
-                                  className="hidden"
-                                />
-                                <Label
-                                  htmlFor={`${object.id}-${index}-photo`}
-                                  className="cursor-pointer flex items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg"
-                                >
-                                  {resources[object.id]?.[index]?.photo ? (
-                                    <div className="relative w-full h-full">
-                                      <Image
-                                        src={resources[object.id][index].photo || "/placeholder.svg?height=128&width=128"}
-                                        alt={`${object.type} option ${index + 1}`}
-                                        fill
-                                        className="object-cover rounded-lg"
-                                      />
-                                      <Button
-                                        variant="destructive"
-                                        size="icon"
-                                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                                        onClick={(e) => {
-                                          e.preventDefault()
-                                          e.stopPropagation()
-                                          handleRemoveResourceImage(object.id, index)
-                                        }}
-                                      >
-                                        <X className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <Upload className="w-8 h-8 text-gray-400" />
-                                  )}
-                                </Label>
+
+                  {resourceCount === 0 ? (
+                    // Initially show only a plus button
+                    <div className="flex justify-center">
+                      <Button
+                        onClick={() => handleAddResource(object.id)}
+                        variant="outline"
+                        className="h-40 w-40 flex flex-col items-center justify-center gap-2"
+                      >
+                        <div className="h-12 w-12 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                          <span className="text-2xl">+</span>
+                        </div>
+                        <span>Add Resource</span>
+                      </Button>
+                    </div>
+                  ) : (
+                    // Show existing resources and add button if less than 3
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap gap-4">
+                        {Object.entries(objectResources).map(([index, resource]) => (
+                          <div key={index} className="mb-4 p-4 border rounded-md w-full md:w-[calc(33.333%-1rem)]">
+                            <h4 className="text-lg font-medium mb-2">Resource {Number.parseInt(index) + 1}</h4>
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor={`${object.id}-${index}-photo`}>Photo</Label>
+                                <div className="mt-1 flex items-center">
+                                  <div className="relative">
+                                    <Input
+                                      id={`${object.id}-${index}-photo`}
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => handleFileChange(object.id, Number.parseInt(index), e)}
+                                      className="hidden"
+                                    />
+                                    <Label
+                                      htmlFor={`${object.id}-${index}-photo`}
+                                      className="cursor-pointer flex items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg"
+                                    >
+                                      {resource.photo ? (
+                                        <div className="relative w-full h-full">
+                                          <Image
+                                            src={resource.photo || "/placeholder.svg?height=128&width=128"}
+                                            alt={`${object.type} resource ${Number.parseInt(index) + 1}`}
+                                            fill
+                                            className="object-cover rounded-lg"
+                                          />
+                                          <Button
+                                            variant="destructive"
+                                            size="icon"
+                                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                                            onClick={(e) => {
+                                              e.preventDefault()
+                                              e.stopPropagation()
+                                              handleRemoveResourceImage(object.id, Number.parseInt(index))
+                                            }}
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <Upload className="w-8 h-8 text-gray-400" />
+                                      )}
+                                    </Label>
+                                  </div>
+                                </div>
                               </div>
+                              <div>
+                                <Label htmlFor={`${object.id}-${index}-link`}>Image Link</Label>
+                                <Input
+                                  id={`${object.id}-${index}-link`}
+                                  type="url"
+                                  placeholder="https://example.com/image.jpg"
+                                  value={resource.link || ""}
+                                  onChange={(e) =>
+                                    handleResourceChange(object.id, Number.parseInt(index), "link", e.target.value)
+                                  }
+                                />
+                              </div>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  const updatedResources = { ...resources }
+                                  delete updatedResources[object.id][Number.parseInt(index)]
+                                  setResources(updatedResources)
+                                }}
+                                className="w-full"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" /> Remove Resource
+                              </Button>
                             </div>
                           </div>
-                          <div>
-                            <Label htmlFor={`${object.id}-${index}-link`}>Link</Label>
-                            <Input
-                              id={`${object.id}-${index}-link`}
-                              type="url"
-                              placeholder="https://example.com"
-                              value={resources[object.id]?.[index]?.link || ""}
-                              onChange={(e) => handleResourceChange(object.id, index, "link", e.target.value)}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              ))}
+                        ))}
 
-            <div className="flex justify-between">
-              <Button onClick={() => setActiveTab("selection")} variant="outline">
-                Back to Selection
-              </Button>
-              <Button onClick={handleSubmit}>Next</Button>
+                        {/* Add button if less than 3 resources */}
+                        {resourceCount < 3 && (
+                          <Button
+                            onClick={() => handleAddResource(object.id)}
+                            variant="outline"
+                            className="h-40 w-full md:w-[calc(33.333%-1rem)] flex flex-col items-center justify-center gap-2"
+                          >
+                            <div className="h-8 w-8 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                              <span className="text-xl">+</span>
+                            </div>
+                            <span>Add Resource</span>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              )
+            })}
+
+          <div className="flex justify-between">
+            <Button onClick={() => setActiveTab("selection")} variant="outline">
+              Back to Selection
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={selectedObjects
+                .filter((obj) => obj.type)
+                .some((obj) => !resources[obj.id] || Object.keys(resources[obj.id]).length === 0)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Fixed guide display at the bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 py-3 px-4 shadow-lg border-t z-50 flex justify-center">
+        <div className="max-w-6xl w-full flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">{drawingInstructions}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              <span className="text-xs">Start</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <span className="text-xs">Line</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <span className="text-xs">Object</span>
             </div>
           </div>
-        )
-      }
-    </div >
+        </div>
+      </div>
+    </div>
   )
 }
-

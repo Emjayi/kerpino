@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 export default function LoginSkeleton() {
     return (
         <div className="flex flex-col gap-6 ">
-            <Card className="overflow-hidden w-[150px] md:w-[150px] lg:w-[200px] xl:w-[500px] mx-auto">
+            <Card className="overflow-hidden md:w-[150px] lg:w-[200px] xl:w-[500px] mx-auto">
                 <CardContent className="p-0">
                     <div className="p-6 md:p-8">
                         <div className="flex flex-col gap-6">

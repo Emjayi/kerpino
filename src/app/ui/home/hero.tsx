@@ -2,7 +2,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Spotlight } from "@/app/ui/home/spotlight";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "../home-navbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -18,7 +17,11 @@ export default function Hero() {
             initial={{ backgroundSize: "105%" }}
             animate={{ backgroundSize: isLoading ? "100%" : "105%" }}
             transition={{ duration: 1.4 }}
+<<<<<<< HEAD
             className="h-screen w-full flex items-center bg-top justify-center antialiased bg-black object-cover bg-cover relative overflow-hidden" style={{ backgroundImage: `${isMobile ? `url("/1.jpg")` : `url("/back.png")`}` }}>
+=======
+            className="h-screen bg bg-no-repeat w-full flex items-center bg-top justify-center antialiased bg-black object-cover bg-cover relative overflow-hidden" style={{ backgroundImage: `${isMobile ? `url("/1.jpg")` : `url("/back.png")`}` }}>
+>>>>>>> 08fc5d34835cc0de54a0b09bbfc58bba9930ad81
             <div className="absolute top-0 left-0 w-full z-20">
                 <Navbar isLoading={isLoading} />
             </div>
