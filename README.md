@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kerpino
+
+**Kerpino** is a modern web application built with [Next.js](https://nextjs.org/), leveraging the power of [Tailwind CSS](https://tailwindcss.com/) for styling and [Bun](https://bun.sh/) as the JavaScript runtime. It is designed to provide a seamless and performant user experience.
+
+## Live Demo
+
+Check out the live application: [kerpino.vercel.app](https://kerpino.vercel.app)
+
+## Features
+
+- ⚡ **Next.js 14** – App Router architecture with optimized routing and performance.
+- 🎨 **Tailwind CSS** – Utility-first CSS framework for rapid UI development.
+- 🚀 **Bun** – Fast JavaScript runtime for efficient development and execution.
+- 🧱 **TypeScript** – Strongly typed language for better code quality and maintainability.
+- 🖋️ **Geist Font** – Modern and clean typography from Vercel.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+Ensure you have the following installed:
+
+- [Bun](https://bun.sh/)
+- [Node.js](https://nodejs.org/) (if not using Bun)
+
+### Installation
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/emjayi/kerpino.git
+   cd kerpino
+   ```
+
+2. **Install dependencies:**
+
+   Using Bun:
+
+   ```bash
+   bun install
+   ```
+
+   Or using npm:
+
+   ```bash
+   npm install
+   ```
+
+### Running the Development Server
+
+Start the development server:
+
+Using Bun:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Or using npm:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+kerpino/
+├── public/             # Static assets
+├── src/                # Source code
+│   ├── app/            # Next.js App Router pages
+│   ├── components/     # Reusable UI components
+│   └── styles/         # Global styles
+├── .gitignore
+├── bun.lockb
+├── next.config.ts
+├── package.json
+├── tailwind.config.ts
+├── tsconfig.json
+└── README.md
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Command       | Description                         |
+|---------------|-------------------------------------|
+| `bun dev`     | Start the development server        |
+| `bun build`   | Build the application for production |
+| `bun start`   | Start the production server         |
+| `bun lint`    | Run ESLint to analyze code          |
 
-## Deploy on Vercel
+## Contributing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Contributions are welcome! Please fork the repository and submit a pull request for any enhancements or bug fixes.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+For more information, visit the [Next.js documentation](https://nextjs.org/docs) and the [Tailwind CSS documentation](https://tailwindcss.com/docs).
