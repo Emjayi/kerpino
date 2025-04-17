@@ -4,7 +4,7 @@
 
 ## Live Demo
 
-Check out the live application: [kerpino.vercel.app](https://app.kerpino.io)
+Check out the live application: [app.kerpino.io](https://app.kerpino.io)
 
 ## Features
 
